@@ -1,0 +1,10 @@
+{
+  "domains": {
+    "*.cp.co.id": {
+      "pins": [
+		"sha256/+pKUV9XFD8hIvHZkyZQCu1Mb0OUuDWhxMmtgEd50vK0=",
+		"sha256/5kJvNEMw0KjrCAu7eXY5HZdvyCS13BbA0VJG1RSP91w="
+      ]
+    }
+  }
+}
