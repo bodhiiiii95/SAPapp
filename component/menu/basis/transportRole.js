@@ -65,54 +65,30 @@ class TransportRoleClass extends React.Component{
 
     StartSraping = () => {
         JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'SourceClient':document.getElementById('sourc_slc').value}))"
-        this.webview.injectJavaScript("window.ReactNativeWebView.postMessage(JSON.stringify({'SourceClient':document.getElementById('sourc_slc').value}))")
-    }
-
-    TestGetMultipleCR = (event) => {
         this.webview.injectJavaScript(JSSCript)
-        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
-        const HTMLParser = require('fast-html-parser');
-        HTMLText = event.nativeEvent.data
-        var root = HTMLParser.parse(HTMLText);
-        let QA = root.querySelector('#table_SAP_CR')
-        if(QA === null){
-            console.log("masih null")
-        }
-        else
-        {
-            CRArray = [];
-            CRcount = (QA['childNodes'][1]['childNodes'].length) - 1
-            for(i = CRArrayPOS; i <= CRcount; i++){
-                var CRRawAttribute = QA['childNodes'][1]['childNodes'][i]['childNodes'][3]['childNodes'][0]['rawAttrs'].toString().split(" ")
-                var CRSplitSpace = CRRawAttribute[4]
-                var CRGetValue = CRSplitSpace.split("=")
-                var CRValue = CRGetValue[1].trim()
-                var CleanCRValue = CRValue.split("\"").join("")
-                CRArray.push(CleanCRValue)
-            }
-            /*var RawAttribute = QA['childNodes'][1]['childNodes'][1]['childNodes'][6]['childNodes'][0]['rawAttrs'].toString().split(" ")
-            var SplitSpace = RawAttribute[3]
-            var GetValue = SplitSpace.split("=")
-            var Value = GetValue[1]*/
-            JSSCript = ""
-            this.webview.injectJavaScript(JSSCript)
-        }
     }
 
     GetEbasisContent = (event) =>{
         this.webview.injectJavaScript(JSSCript)
         if(JSSCript === "window.ReactNativeWebView.postMessage(JSON.stringify({'SourceClient':document.getElementById('sourc_slc').value}))")
         {   
-            let SourceClientJSON = JSON.parse(event.nativeEvent.data)
-            const SourceClient = SourceClientJSON.SourceClient
-            if(SourceClient === ''){
-                ;
+            try{
+                let SourceClientJSON = JSON.parse(event.nativeEvent.data)
+                const SourceClient = SourceClientJSON.SourceClient
+                if(SourceClient === ''){
+                    ;
+                }
+                else{
+                    this.setState({SourceClient:SourceClient}, () => {
+                        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('SP_1').checked)"
+                        this.webview.injectJavaScript(JSSCript)
+                    })
+                }
             }
-            else{
-                this.setState({SourceClient:SourceClient}, () => {
-                    JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('SP_1').checked)"
-                    this.webview.injectJavaScript(JSSCript)
-                })
+            catch(e){
+                console.log("still scrapping")
+                JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'SourceClient':document.getElementById('sourc_slc').value}))"
+                this.webview.injectJavaScript(JSSCript)
             }
         }
         else if(JSSCript === "window.ReactNativeWebView.postMessage(document.getElementById('SP_1').checked)"){
@@ -254,10 +230,23 @@ class TransportRoleClass extends React.Component{
                             JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'811':document.getElementById('QA_811').checked,'812':document.getElementById('QA_812').checked}))"
                             this.webview.injectJavaScript(JSSCript)
                         }
-                        else if(Value !== "\"" && this.state.SourceClient === '361'){
+                        else if(Value !== "\"" && this.state.SourceClient === '801'){
                             //next step
                             TargetClient = []
                             TargetClient.push("800");
+                            this.setState({TargetClient:[...TargetClient]})
+                            JSSCript = ""
+                            this.webview.injectJavaScript(JSSCript)
+                        }
+
+                        else if(Value === "\"" && this.state.SourceClient === '361'){
+                            JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'461':document.getElementById('QA_461').checked,'462':document.getElementById('QA_462').checked}))"
+                            this.webview.injectJavaScript(JSSCript)
+                        }
+                        else if(Value !== "\"" && this.state.SourceClient === '361'){
+                            //next step
+                            TargetClient = []
+                            TargetClient.push("160");
                             this.setState({TargetClient:[...TargetClient]})
                             JSSCript = ""
                             this.webview.injectJavaScript(JSSCript)
@@ -386,7 +375,7 @@ class TransportRoleClass extends React.Component{
                 var ClientJSON = JSON.parse(event.nativeEvent.data)
                 TargetClient = []
                 if(ClientJSON["811"] === false && ClientJSON["812"] === false){
-                    TargetClient.push("100");
+                    TargetClient.push("800");
                 }
                 else{
                     if(ClientJSON["811"] === true){
@@ -648,90 +637,90 @@ class TransportRoleClass extends React.Component{
     render(){
         return(
             <Root>
-                <ScrollView style={{flexGrow:1}}>
-                    <View style={{flex:2, justifyContent:'center', alignItems:'center'}}>
-                        {
-                            /* 
-                            <Picker
-                                selectedValue={this.state.SourceClient}
-                                onValueChange={(Value, Index) => {
-                                    this.setState({SourceClient:Value})
-                                }}
-                            >
-                                <Picker.Item label="301" value="301" />
-                                <Picker.Item label="303" value="303" />
-                                <Picker.Item label="363" value="363" />
-                                <Picker.Item label="801" value="801" />
-                            </Picker>
-                            */
-                        }
-                        <Text style={{fontWeight:'bold'}}>Transport To : </Text>
-                        {
-                            this.state.TargetClient.map((value, i) => {
-                                return(
-                                    <Text key={i} ref={refs => {this[`TargetClients${i}`] = refs}}>{value} {this.state.ClientStatus[i]}</Text>
-                                )
-                            })
-                        }
-                        <Text style={{fontWeight:'bold'}}>with CR : </Text>
-                        {
-                            this.state.CR.map((value, index) => {
-                                return(
-                                    <Text key={value} ref={refval => {this[`CR${index}`] = refval}}>{value} {this.state.CRFinalStatus[index]}</Text>
-                                )
-                            })
-                        }
-                        <Text>Status : {this.state.TransportResponse}</Text>
-                        <Text style={{fontWeight:'bold'}}>LOG : </Text>
-                        {
-                            this.state.CRFinalLog.map((value, index) => {
-                                return(
-                                    <Text key={value}>- {value}</Text>
-                                )
-                            })
-                        }
-                        <View style={{width:width, height:width/10, flexDirection:'row', marginTop:10}}>
-                            <View style={{flex:1}}>
-                                <TouchableHighlight onPress={() => 
-                                    {
-                                        this.state.TargetClient.map((value, index) => {
-                                            this[`TargetClients${index}`].setNativeProps({style:{color:'black'}})
-                                        })
-                                        this.state.CR.map((value, index) => {
-                                            this[`CR${index}`].setNativeProps({style:{color:'black'}})
-                                        })
-                                        this.setState({ClientStatus:[], CRFinalStatus:[], CRFinalLog:[]},() => {
-                                            CRFinalStatusMark = [];
-                                            this.TransportRoles()
-                                        })
-                                    }} 
-                                    style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10}}>
-                                    <Text>TRANSPORT</Text>
-                                </TouchableHighlight>
+                <View style={{flex:1}}>
+                    <View style={{flex:2}}>
+                        <ScrollView style={{flexGrow:1}}>
+                            <View style={{flex:2, justifyContent:'center', alignItems:'center'}}>
+                                {
+                                    /* 
+                                    <Picker
+                                        selectedValue={this.state.SourceClient}
+                                        onValueChange={(Value, Index) => {
+                                            this.setState({SourceClient:Value})
+                                        }}
+                                    >
+                                        <Picker.Item label="301" value="301" />
+                                        <Picker.Item label="303" value="303" />
+                                        <Picker.Item label="363" value="363" />
+                                        <Picker.Item label="801" value="801" />
+                                    </Picker>
+                                    */
+                                }
+                                <Text style={{fontWeight:'bold'}}>Transport To : </Text>
+                                {
+                                    this.state.TargetClient.map((value, i) => {
+                                        return(
+                                            <Text key={i} ref={refs => {this[`TargetClients${i}`] = refs}}>{value} {this.state.ClientStatus[i]}</Text>
+                                        )
+                                    })
+                                }
+                                <Text style={{fontWeight:'bold'}}>with CR : </Text>
+                                {
+                                    this.state.CR.map((value, index) => {
+                                        return(
+                                            <Text key={value} ref={refval => {this[`CR${index}`] = refval}}>{value} {this.state.CRFinalStatus[index]}</Text>
+                                        )
+                                    })
+                                }
+                                <Text>Status : {this.state.TransportResponse}</Text>
+                                <Text style={{fontWeight:'bold'}}>LOG : </Text>
+                                {
+                                    this.state.CRFinalLog.map((value, index) => {
+                                        return(
+                                            <Text key={value}>- {value}</Text>
+                                        )
+                                    })
+                                }
+                                <View style={{width:width, height:width/10, flexDirection:'row', marginTop:10}}>
+                                    <View style={{flex:1}}>
+                                        <TouchableHighlight onPress={() => 
+                                            {
+                                                this.state.TargetClient.map((value, index) => {
+                                                    this[`TargetClients${index}`].setNativeProps({style:{color:'black'}})
+                                                })
+                                                this.state.CR.map((value, index) => {
+                                                    this[`CR${index}`].setNativeProps({style:{color:'black'}})
+                                                })
+                                                this.setState({ClientStatus:[], CRFinalStatus:[], CRFinalLog:[]},() => {
+                                                    CRFinalStatusMark = [];
+                                                    this.TransportRoles()
+                                                })
+                                            }} 
+                                            style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10}}>
+                                            <Text>TRANSPORT</Text>
+                                        </TouchableHighlight>
+                                    </View>
+                                    
+                                    <View style={{flex:1}}>
+                                        <TouchableHighlight onPress={() => this.StartSraping()} style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10}}>
+                                            <Text>MANUAL SCRAPPING</Text>
+                                        </TouchableHighlight>
+                                    </View>
+                                </View>
+                                
                             </View>
-                            
-                            <View style={{flex:1}}>
-                                <TouchableHighlight onPress={() => this.StartSraping()} style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10}}>
-                                    <Text>MANUAL SCRAPPING</Text>
-                                </TouchableHighlight>
-                            </View>
-                        </View>
-                        
+                        </ScrollView>
                     </View>
-                    {
-                        this.props.RequestType === '' ?
-                        <View></View>
-                        :
-                        <View style={{flex:1}}>
-                            <WebView ref={c => this.webview = c} 
-                                source={{uri:'https://es.cp.co.id/ebasis.php?ecsno=' + this.props.Link}}
-                                injectedJavaScript={JSSCript}
-                                onMessage={this.GetEbasisContent}
-                                onLoadEnd={() => this.StartSraping()}
-                            />
-                        </View>
-                    }
-                </ScrollView>
+
+                    <View style={{flex:1}}>
+                        <WebView ref={c => this.webview = c} 
+                            source={{uri:'https://es.cp.co.id/ebasis.php?ecsno=' + this.props.Link}}
+                            injectedJavaScript={JSSCript}
+                            onMessage={this.GetEbasisContent}
+                            onLoadEnd={() => this.StartSraping()}
+                        />
+                    </View>
+                </View>
             </Root>
         )
     }
