@@ -100,7 +100,7 @@ class TransportRoleClass extends React.Component{
                 else if(event.nativeEvent.data === 'true'){
                     //one step
                     this.setState({OneStep:true}, () => {
-                        JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'401':document.getElementById('QA_401').checked,'402':document.getElementById('QA_402').checked,'100':document.getElementById('PR_100').checked}))"
+                        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
                 }
@@ -116,7 +116,7 @@ class TransportRoleClass extends React.Component{
                 else if(event.nativeEvent.data === 'true'){
                     //one step
                     this.setState({OneStep:true}, () => {
-                        JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'461':document.getElementById('QA_461').checked,'462':document.getElementById('QA_462').checked,'160':document.getElementById('PR_160').checked}))"
+                        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
                 }
@@ -132,7 +132,7 @@ class TransportRoleClass extends React.Component{
                 else if(event.nativeEvent.data === 'true'){
                     //one step
                     this.setState({OneStep:true}, () => {
-                        JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'420':document.getElementById('QA_420').checked,'120':document.getElementById('PR_120').checked}))"
+                        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
                 }
@@ -148,7 +148,7 @@ class TransportRoleClass extends React.Component{
                 else if(event.nativeEvent.data === 'true'){
                     //one step
                     this.setState({OneStep:true}, () => {
-                        JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'811':document.getElementById('QA_811').checked,'812':document.getElementById('QA_812').checked,'800':document.getElementById('PR_800').checked}))"
+                        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
                 }
@@ -183,8 +183,21 @@ class TransportRoleClass extends React.Component{
                 }
                 this.setState({CR:CRArray}, () => {
                     if(this.state.OneStep === true){
-                        JSSCript = ""
-                        this.webview.injectJavaScript(JSSCript)
+                        if((Value === "\"" && this.state.SourceClient === '301') || (Value === "\"" && this.state.SourceClient === '303')){
+                            JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'401':document.getElementById('QA_401').checked,'402':document.getElementById('QA_402').checked,'100':document.getElementById('PR_100').checked}))"
+                        }
+                        else if(Value === "\"" && this.state.SourceClient === '361'){
+                            JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'461':document.getElementById('QA_461').checked,'462':document.getElementById('QA_462').checked,'160':document.getElementById('PR_160').checked}))"
+                            this.webview.injectJavaScript(JSSCript)
+                        }
+                        else if(Value === "\"" && this.state.SourceClient === '341'){
+                            JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'420':document.getElementById('QA_420').checked,'120':document.getElementById('PR_120').checked}))"
+                            this.webview.injectJavaScript(JSSCript)
+                        }
+                        else if(Value === "\"" && this.state.SourceClient === '801'){
+                            JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'811':document.getElementById('QA_811').checked,'812':document.getElementById('QA_812').checked,'800':document.getElementById('PR_800').checked}))"
+                            this.webview.injectJavaScript(JSSCript)
+                        }
                     }
                     else{
                         if((Value === "\"" && this.state.SourceClient === '301') || (Value === "\"" && this.state.SourceClient === '303')){
@@ -286,9 +299,6 @@ class TransportRoleClass extends React.Component{
                 console.log(e)
                 this.webview.injectJavaScript(JSSCript)
             }
-            finally{
-                this.webview.injectJavaScript(JSSCript)
-            }
         }
         else if(JSSCript === "window.ReactNativeWebView.postMessage(JSON.stringify({'461':document.getElementById('QA_461').checked,'462':document.getElementById('QA_462').checked,'160':document.getElementById('PR_160').checked}))"){
             // get 1 step data
@@ -310,12 +320,12 @@ class TransportRoleClass extends React.Component{
                 }
 
                 TargetClient.push("160");
-                this.setState({TargetClient:[...TargetClient]})
+                this.setState({TargetClient:[...TargetClient]}, () => {
+                    JSSCript = ""
+                    this.webview.injectJavaScript(JSSCript)
+                })
             }
             catch(e){
-                this.webview.injectJavaScript(JSSCript)
-            }
-            finally{
                 this.webview.injectJavaScript(JSSCript)
             }
         }
@@ -343,9 +353,6 @@ class TransportRoleClass extends React.Component{
                 console.log(e)
                 this.webview.injectJavaScript(JSSCript)
             }
-            finally{
-                this.webview.injectJavaScript(JSSCript)
-            }
         }
         else if(JSSCript === "window.ReactNativeWebView.postMessage(JSON.stringify({'420':document.getElementById('QA_420').checked,'120':document.getElementById('PR_120').checked}))"){
             // get 1 step data
@@ -360,12 +367,12 @@ class TransportRoleClass extends React.Component{
                 }
 
                 TargetClient.push("120");
-                this.setState({TargetClient:[...TargetClient]})
+                this.setState({TargetClient:[...TargetClient]}, () => {
+                    JSSCript = ""
+                    this.webview.injectJavaScript(JSSCript)
+                })
             }
             catch(e){
-                this.webview.injectJavaScript(JSSCript)
-            }
-            finally{
                 this.webview.injectJavaScript(JSSCript)
             }
         }
@@ -400,9 +407,6 @@ class TransportRoleClass extends React.Component{
                 console.log(e)
                 this.webview.injectJavaScript(JSSCript)
             }
-            finally{
-                this.webview.injectJavaScript(JSSCript)
-            }
         }
         else if(JSSCript === "window.ReactNativeWebView.postMessage(JSON.stringify({'811':document.getElementById('QA_811').checked,'812':document.getElementById('QA_812').checked,'800':document.getElementById('PR_800').checked}))"){
             // get 1 step data
@@ -424,12 +428,12 @@ class TransportRoleClass extends React.Component{
                 }
 
                 TargetClient.push("800");
-                this.setState({TargetClient:[...TargetClient]})
+                this.setState({TargetClient:[...TargetClient]}, () => {
+                    JSSCript = ""
+                    this.webview.injectJavaScript(JSSCript)
+                })
             }
             catch(e){
-                this.webview.injectJavaScript(JSSCript)
-            }
-            finally{
                 this.webview.injectJavaScript(JSSCript)
             }
         }
@@ -464,9 +468,6 @@ class TransportRoleClass extends React.Component{
                 console.log(e)
                 this.webview.injectJavaScript(JSSCript)
             }
-            finally{
-                this.webview.injectJavaScript(JSSCript)
-            }
         }
         else if(JSSCript === "window.ReactNativeWebView.postMessage(JSON.stringify({'401':document.getElementById('QA_401').checked,'402':document.getElementById('QA_402').checked,'100':document.getElementById('PR_100').checked}))"){
             // get 1 step data
@@ -488,12 +489,12 @@ class TransportRoleClass extends React.Component{
                 }
 
                 TargetClient.push("100");
-                this.setState({TargetClient:[...TargetClient]})
+                this.setState({TargetClient:[...TargetClient]}, () => {
+                    JSSCript = ""
+                    this.webview.injectJavaScript(JSSCript)
+                })
             }
             catch(e){
-                this.webview.injectJavaScript(JSSCript)
-            }
-            finally{
                 this.webview.injectJavaScript(JSSCript)
             }
         }
