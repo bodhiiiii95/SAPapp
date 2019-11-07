@@ -3,8 +3,13 @@ import React, {Component} from 'react';
 import SplashApp from './splash/wrapper.js';
 import LoginApp from './login/wrapper.js';
 import MenuApp from './menu/wrapper.js'
+import UnlockSAPID from './menu/basis/unlocksapid.js'
+import AssignSAPRole from './menu/basis/assignsaprole'
+import RegisterSAPID from './menu/basis/registersapid.js';
+import CreateSAPID from './menu/basis/createsapid.js';
+import TransportRole from './menu/basis/transportRole';
 import {createStore, combineReducers, applyMiddleware} from 'redux'
-import {Provider} from 'react-redux'
+import { Provider } from 'react-redux'
 import { zoomIn } from 'react-navigation-transitions';
 
 class SplashScreen extends React.Component{
@@ -37,13 +42,68 @@ class MenuScreen extends React.Component{
     }
 }
 
+class UnlockSAPIDScreen extends React.Component{
+    static navigationOptions = {
+        title : 'UnlockSAPID',
+        header : null,
+    }
+    render(){
+        return(<UnlockSAPID />)
+    }
+}
+
+class AssignSAPRoleScreen extends React.Component{
+    static navigationOptions = {
+        title : 'AssignSAPRole',
+        header : null,
+    }
+    render(){
+        return(<AssignSAPRole />)
+    }
+}
+
+class RegisterSapIDScreen extends React.Component{
+    static navigationOptions = {
+        title : 'RegisterSAPID',
+        header : null,
+    }
+    render(){
+        return(<RegisterSAPID />)
+    }
+}
+
+class CreateSAPIDScreen extends React.Component{
+    static navigationOptions = {
+        title : 'CreateSAPID',
+        header : null,
+    }
+    render(){
+        return(<CreateSAPID />)
+    }
+}
+
+class TransportRoleScreen extends React.Component{
+    static navigationOptions = {
+        title : 'TransportRole',
+        header : null,
+    }
+    render(){
+        return(<TransportRole />)
+    }
+}
+
 const RootStack = createStackNavigator({
     Splash : SplashScreen,
     Login : LoginScreen,
     Menu : MenuScreen,
+    UnlockSAPID : UnlockSAPIDScreen,
+    AssignSAPRole : AssignSAPRoleScreen,
+    RegisterSAPID : RegisterSapIDScreen,
+    CreateSAPID : CreateSAPIDScreen,
+    TransportRole:TransportRoleScreen,
 },
 {
-    initialRouteName: 'Splash',
+    initialRouteName: 'Login',
     transitionConfig: () => zoomIn(1000),
 });
 
@@ -83,6 +143,7 @@ const orderState = {
     DoneState:false,
     RoleName:'',
     Valid:'',
+    AppUser:'',
 }
 
 const reducer = (state = orderState, action) => {
@@ -145,6 +206,12 @@ const reducer = (state = orderState, action) => {
             state = {
                 ...state,
                 Link:action.payload
+            }
+        break;
+        case "CHANGE_APP_USER":
+            state = {
+                ...state,
+                AppUser:action.payload
             }
         break;
     }

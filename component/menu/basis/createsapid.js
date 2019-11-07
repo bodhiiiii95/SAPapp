@@ -1,9 +1,13 @@
-import { List, ListItem, Text, Form, Item, Label, Card, CardItem, Input, Button, Picker, Radio, Left, DatePicker, Content, Toast, Body, View, Spinner, Tabs, Tab, Container, Segment, Row} from 'native-base';
+import { List, ListItem, Text, Form, Item, Label, Card, CardItem, Input, Button, Picker, Radio, Left, DatePicker, Content, Toast, Body, Spinner, Tabs, Tab, Container, Segment, Row} from 'native-base';
 import React, { Component } from 'react';
-import {Modal, StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert} from 'react-native'; 
+import {Modal, StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert, View, BackHandler} from 'react-native'; 
 import {connect} from 'react-redux';
-import { Header } from 'react-navigation';
+import { withNavigation, StackActions, NavigationActions } from 'react-navigation';
+import {WebView} from 'react-native-webview';
 
+const BackToHome = StackActions.pop({
+    n:1
+})
 
 var width = Dimensions.get("window").width;
 var height = Dimensions.get("window").height;
@@ -43,6 +47,7 @@ class CreateSAPID extends React.Component{
         ReplaceActiveSAPID:false,
         ActiveUserCheckStatus:'',
         CheckReplaceSAPIDString:'',
+        ESTicket:'',
     }
 
     async GetKey(){
@@ -261,14 +266,14 @@ class CreateSAPID extends React.Component{
     }
 
     ReplaceUserValidation = (SAPID) => {
-        if(this.props.Link.toString().substr(35,20) === '' || this.props.Link.toString().substr(35,20) === null){
+        if(this.props.Link === '' || this.props.Link === null){
             this.setState({RequestTicket:'null'},() => {
                 this.setState({ReplaceListModal:false})
                 this.ReplaceUserValidationFetchFunction(SAPID)
             });
         }
         else{
-            this.setState({RequestTicket:this.props.Link.toString().substr(35,20)}, () => {
+            this.setState({RequestTicket:this.props.Link}, () => {
                 this.setState({ReplaceListModal:false})
                 this.ReplaceUserValidationFetchFunction(SAPID)
             });
@@ -358,8 +363,8 @@ class CreateSAPID extends React.Component{
             }
         }
         else if(this.state.DeleteID === true){
-            if(this.props.Link.toString().substr(35,20) !== ''){
-                this.setState({DeleteTicket:this.props.Link.toString().substr(35,20)})
+            if(this.props.Link !== ''){
+                this.setState({DeleteTicket:this.props.Link})
             }
             else{
                 ;
@@ -453,12 +458,22 @@ class CreateSAPID extends React.Component{
     componentDidMount(){
         this.GetClient();
         this.GetKey();
-        if(this.props.Link.toString().substr(35,20) === '' || this.props.Link.toString().substr(35,20) === null){
+        if(this.props.Link === '' || this.props.Link === null){
             ;
         }
         else{
-            this.setState({DeleteTicket:this.props.Link.toString().substr(35,20)});
+            this.setState({DeleteTicket:this.props.Link});
         }
+        BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
+    }
+
+    HandleBackButton = () => {
+        this.props.navigation.dispatch(BackToHome);
+        return true;
+    }
+
+    componentWillUnmount(){
+        BackHandler.removeEventListener('hardwareBackPress', this.HandleBackButton);
     }
 
     componentDidUpdate(PrevProps){
@@ -483,6 +498,9 @@ class CreateSAPID extends React.Component{
     }
 
     DateParseFrom = () => {
+        var DateNowMonth = null
+        let DateNowYear = null
+        let DateNowDate = null
         if(this.state.ValidFrom.toString().substr(4,3) === 'Jan'){
             DateNowMonth = '01'
         }
@@ -536,6 +554,9 @@ class CreateSAPID extends React.Component{
     }
 
     DateParseTo = () => {
+        let DateToMonth = null
+        let DateToYear = null
+        let DateToDate = null
         if(this.state.ValidTo.toString().substr(4,3) === 'Jan'){
             DateToMonth = '01'
         }
@@ -573,7 +594,7 @@ class CreateSAPID extends React.Component{
             DateToMonth = '12'
         }
         else if(this.state.ValidTo.toString() === ''){
-            DateToMonth='00'
+            DateToMonth='12'
         }
 
         if(this.state.ValidTo.toString() !== ''){
@@ -581,8 +602,8 @@ class CreateSAPID extends React.Component{
             DateToYear = this.state.ValidTo.toString().substr(11,4);
         }
         else{
-            DateToDate = '00';
-            DateToYear = '0000';
+            DateToDate = '31';
+            DateToYear = '9999';
         }
         return DateToYear+DateToMonth+DateToDate;
     }
@@ -696,12 +717,12 @@ class CreateSAPID extends React.Component{
 
     DeleteSAPIDFromReplace = (NewSAPID, OldSAPID) => {
         let ReplaceTicket;
-        if(this.props.Link.toString().substr(35,20) === '' || this.props.Link.toString().substr(35,20) === null)
+        if(this.props.Link === '' || this.props.Link === null)
         {
             ReplaceTicket = 'null';
         }
         else{
-            ReplaceTicket = this.props.Link.toString().substr(35,20);
+            ReplaceTicket = this.props.Link;
         }
         fetch(this.props.APIIP + 'sapapi/basis/deleteSAPIDFromReplace.php', {
             method: 'POST',
@@ -1019,133 +1040,141 @@ class CreateSAPID extends React.Component{
             }
         }
         return(
-            <Content underline={false}>
-                <Modal
-                    transparent={false}
-                    visible={this.state.ReplaceListModal}
-                    animationType="slide"
-                >
-                    {
-                        this.state.ReplaceActiveSAPID !== true ?
-                        <View style={{flex:1, flexDirection:'column'}}>
-                            <View style={{flex:1, flexDirection:'row', justifyContent:'space-around', alignItems:'center'}}>
-                                <Text style={{textDecorationLine:'underline'}} onPress={() => this.HandleReplaceTypeFrom('d')}>Deleted</Text>
-                                <Text onPress={() => this.HandleReplaceTypeFrom('a')}>Active User</Text>
-                            </View>
-                            <View style={{flex:10}}>
-                                {
-                                    this.state.LoadSAPIDReplacement ?
-                                    <Spinner color='red'/>
-                                    :
-                                    <List>
-                                        {
-                                            this.state.SAPIDReplaceAvailable.length === 0 ?
-                                            <ListItem>
-                                                <Text>'No SAP ID available for replace</Text>
-                                            </ListItem>
-                                            :
-                                            this.state.SAPIDReplaceAvailable.map((SAPID, index) => 
-                                                <ListItem onPress={()=>{this.ValidationCreateNewStepThree(SAPID['sap_id'])}}>
-                                                    <Text>{SAPID['sap_id'] + ' - ' + SAPID['NIK'] + ' - ' + SAPID['departement']}</Text>
+            <View style={{flex:1}}>
+                <Content underline={false}>
+                    <Modal
+                        transparent={false}
+                        visible={this.state.ReplaceListModal}
+                        animationType="slide"
+                    >
+                        {
+                            this.state.ReplaceActiveSAPID !== true ?
+                            <View style={{flex:1, flexDirection:'column'}}>
+                                <View style={{flex:1, flexDirection:'row', justifyContent:'space-around', alignItems:'center'}}>
+                                    <Text style={{textDecorationLine:'underline'}} onPress={() => this.HandleReplaceTypeFrom('d')}>Deleted</Text>
+                                    <Text onPress={() => this.HandleReplaceTypeFrom('a')}>Active User</Text>
+                                </View>
+                                <View style={{flex:10}}>
+                                    {
+                                        this.state.LoadSAPIDReplacement ?
+                                        <Spinner color='red'/>
+                                        :
+                                        <List>
+                                            {
+                                                this.state.SAPIDReplaceAvailable.length === 0 ?
+                                                <ListItem>
+                                                    <Text>'No SAP ID available for replace</Text>
                                                 </ListItem>
-                                            )
-                                        }
-                                    </List>
-                                }
+                                                :
+                                                this.state.SAPIDReplaceAvailable.map((SAPID, index) => 
+                                                    <ListItem onPress={()=>{this.ValidationCreateNewStepThree(SAPID['sap_id'])}}>
+                                                        <Text>{SAPID['sap_id'] + ' - ' + SAPID['NIK'] + ' - ' + SAPID['departement']}</Text>
+                                                    </ListItem>
+                                                )
+                                            }
+                                        </List>
+                                    }
+                                </View>
                             </View>
-                        </View>
-                        :
-                        <View style={{flex:1, flexDirection:'column'}}>
-                            <View style={{flex:1, flexDirection:'row', justifyContent:'space-around', alignItems:'center'}}>
-                                <Text onPress={() => this.HandleReplaceTypeFrom('d')}>Deleted</Text>
-                                <Text style={{textDecorationLine:'underline'}} onPress={() => this.HandleReplaceTypeFrom('a')}>Active User</Text>
+                            :
+                            <View style={{flex:1, flexDirection:'column'}}>
+                                <View style={{flex:1, flexDirection:'row', justifyContent:'space-around', alignItems:'center'}}>
+                                    <Text onPress={() => this.HandleReplaceTypeFrom('d')}>Deleted</Text>
+                                    <Text style={{textDecorationLine:'underline'}} onPress={() => this.HandleReplaceTypeFrom('a')}>Active User</Text>
+                                </View>
+                                <View style={{flex:10}}>
+                                    <Item floatingLabel>
+                                        <Label>Username</Label>
+                                        <Input onChangeText={(value) => {this.setState({CheckReplaceSAPIDString:value})}}/>
+                                    </Item>
+                                    <Item  style={{alignItems:'stretch'}}>
+                                        <Button onPress={()=>this.CheckIfActiveSAPIDExisting()}>
+                                            <Text>Check User</Text>
+                                        </Button>
+                                    </Item>
+                                    <Text style={{color:'red'}}>{this.state.ActiveUserCheckStatus}</Text>
+                                </View>
                             </View>
-                            <View style={{flex:10}}>
-                                <Item floatingLabel>
-                                    <Label>Username</Label>
-                                    <Input onChangeText={(value) => {this.setState({CheckReplaceSAPIDString:value})}}/>
-                                </Item>
-                                <Item  style={{alignItems:'stretch'}}>
-                                    <Button onPress={()=>this.CheckIfActiveSAPIDExisting()}>
-                                        <Text>Check User</Text>
-                                    </Button>
-                                </Item>
-                                <Text style={{color:'red'}}>{this.state.ActiveUserCheckStatus}</Text>
-                            </View>
-                        </View>
-                    }
-                    <Button onPress={() => {this.CancelValidation()}}>
-                        <Text>Cancel Action</Text>
-                    </Button>
-                </Modal>
-
-                {SAPIDList()}
-                <Form underline={false} style={styles.container}>
-                    <Item floatingLabel>
-                        <Label>Username</Label>
-                        <Input maxLength={12} onChangeText={(value) => this.setState({SAPUsername:value})} />
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Text>Client : </Text>
-                        <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
-                            {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
-                        </Picker>
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Button onPress={() => {this.ModalController()}}>
-                            <Text>Replaceable SAP ID List</Text>
+                        }
+                        <Button onPress={() => {this.CancelValidation()}}>
+                            <Text>Cancel Action</Text>
                         </Button>
-                    </Item>
-                    <View style={styles.SelectBoxContainer}>
-                        <Item style={{borderColor: '#ffffff', flex:0.5, alignSelf:'center',}}>
-                            <Radio selected={this.state.CreateNew} onPress={()=>this.HandleOption('n')}/>
-                            <Left style={{marginLeft:10}}>
-                                <Text>Create New</Text>
-                            </Left>
-                        </Item>
+                    </Modal>
 
-                        <Item style={{borderColor: '#ffffff', flex:0.5, alignSelf:'center',}}>
-                            <Radio selected={this.state.CopyNew} onPress={()=>this.HandleOption('c')}/>
-                            <Left style={{marginLeft:10}}>
-                                <Text>Copy User</Text>
-                            </Left>
+                    {SAPIDList()}
+                    <Form underline={false} style={styles.container}>
+                        <Item floatingLabel>
+                            <Label>Username</Label>
+                            <Input maxLength={12} onChangeText={(value) => this.setState({SAPUsername:value})} />
                         </Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Text>Client : </Text>
+                            <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
+                                {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
+                            </Picker>
+                        </Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Button onPress={() => {this.ModalController()}}>
+                                <Text>Replaceable SAP ID List</Text>
+                            </Button>
+                        </Item>
+                        <View style={styles.SelectBoxContainer}>
+                            <Item style={{borderColor: '#ffffff', flex:0.5, alignSelf:'center',}}>
+                                <Radio selected={this.state.CreateNew} onPress={()=>this.HandleOption('n')}/>
+                                <Left style={{marginLeft:10}}>
+                                    <Text>Create New</Text>
+                                </Left>
+                            </Item>
 
-                        <Item style={{borderColor: '#ffffff', flex:0.5, alignSelf:'center',}}>
-                            <Radio selected={this.state.DeleteID} onPress={()=>this.HandleOption('d')}/>
-                            <Left style={{marginLeft:10}}>
-                                <Text>Delete User</Text>
-                            </Left>
+                            <Item style={{borderColor: '#ffffff', flex:0.5, alignSelf:'center',}}>
+                                <Radio selected={this.state.CopyNew} onPress={()=>this.HandleOption('c')}/>
+                                <Left style={{marginLeft:10}}>
+                                    <Text>Copy User</Text>
+                                </Left>
+                            </Item>
+
+                            <Item style={{borderColor: '#ffffff', flex:0.5, alignSelf:'center',}}>
+                                <Radio selected={this.state.DeleteID} onPress={()=>this.HandleOption('d')}/>
+                                <Left style={{marginLeft:10}}>
+                                    <Text>Delete User</Text>
+                                </Left>
+                            </Item>
+                        </View>
+                        {screen()}
+                        <Item style={styles.ButtonContainer}>
+                            <Button rounded style={styles.ButtonUnlock} onPress={()=> this.CheckUserExistOrNot()}>
+                                <Text>{this.state.ButtonCreate}</Text>
+                            </Button>
                         </Item>
-                    </View>
-                    {screen()}
-                    <Item style={styles.ButtonContainer}>
-                        <Button rounded style={styles.ButtonUnlock} onPress={()=> this.CheckUserExistOrNot()}>
-                            <Text>{this.state.ButtonCreate}</Text>
-                        </Button>
-                    </Item>
-                    <Item style={styles.CheckBox}>
-                        <Text>{this.state.Message}</Text>
-                    </Item>
-                </Form>
-                <Card>
-                    {
-                        this.props.Request === '' ?
-                        <CardItem bordered header>  
-                            <Text>This action is not affiliate to request from ES</Text>
+                        <Item style={styles.CheckBox}>
+                            <Text>{this.state.Message}</Text>
+                        </Item>
+                    </Form>
+                    <Card>
+                        {
+                            this.props.Request === '' ?
+                            <CardItem bordered header>  
+                                <Text>This action is not affiliate to request from ES</Text>
+                            </CardItem>
+                            :
+                            <CardItem bordered button onPress={() => this.BackToHome()} header>  
+                                <Text>This action is affiliate to request : {this.props.Link} (Click here if you have done your work)</Text>
+                            </CardItem>
+                        }
+                        <CardItem bordered>
+                            <Body>
+                                <Text accessible={true} selectable={true}>{this.props.Request + " client : " + this.props.Client}</Text>
+                            </Body>
                         </CardItem>
-                        :
-                        <CardItem bordered button onPress={() => this.BackToHome()} header>  
-                            <Text>This action is affiliate to request : {this.props.Link.toString().substr(35,20)} (Click here if you have done your work)</Text>
-                        </CardItem>
-                    }
-                    <CardItem bordered>
-                        <Body>
-                            <Text accessible={true} selectable={true}>{this.props.Request + " client : " + this.props.Client}</Text>
-                        </Body>
-                    </CardItem>
-                </Card>
-            </Content>
+                    </Card>
+                </Content>
+                {
+                    this.props.Request === '' ?
+                    null
+                    :
+                    <WebView ref={c => this.webview = c} source={{uri:'https://es.cp.co.id/edco.php?ecsno=' + this.props.Link}} />
+                }
+            </View>
         )
     }
 }
@@ -1228,4 +1257,4 @@ const MapDispatchToProps = (dispatch) =>{
 
 const CreateSAPIDRedux = connect(MapStateToProps, MapDispatchToProps)(CreateSAPID)
 
-export default CreateSAPIDRedux;
+export default withNavigation(CreateSAPIDRedux);

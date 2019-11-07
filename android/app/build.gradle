@@ -196,13 +196,16 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-blur-overlay')
+    implementation project(':@react-native-community_blur')
+    compile project(':react-native-video')
     implementation project(':react-native-webview')
     implementation project(':react-native-document-picker')
-    implementation project(':react-native-fs')
     implementation project(':@react-native-community_async-storage')
     implementation project(':react-native-vector-icons')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
+    implementation 'com.facebook.fresco:animated-gif:2.0.0'
 
     if (enableHermes) {
       def hermesPath = "../../node_modules/hermesvm/android/";

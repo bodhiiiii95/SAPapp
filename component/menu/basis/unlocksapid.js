@@ -1,10 +1,13 @@
 import { Text, Form, Item, Label, Input, Button, Picker, CheckBox, Body, ListItem, Content, Toast, Card, CardItem} from 'native-base';
 import React, { Component } from 'react';
-import {StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert} from 'react-native'; 
+import {StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert, View, BackHandler} from 'react-native'; 
 import {connect} from 'react-redux';
-import  NLPS  from './NLP.js'
+import { withNavigation, StackActions, NavigationActions } from 'react-navigation';
+import {WebView} from 'react-native-webview';
 
-
+const BackToHome = StackActions.pop({
+    n:1
+})
 var width = Dimensions.get("window").width;
 var height = Dimensions.get("window").height;
 
@@ -270,6 +273,7 @@ class UnlockSAPID extends React.Component{
                 if(this.props.RequestType === '' || this.props.ResetState === '' || this.props.SAPID === '' || this.props.client === '' || this.props.Request === '' || this.props.ScreenType !== 'HOME' || this.props.ScreenType === '' || this.props.ScreenType === null){
                     clearInterval(TimeChangeMenuType)
                     this.props.SelectMenuType('HOME')
+                    this.props.navigation.dispatch(BackToHome);
                 }
                 else{
                     this.props.ChangeRequestType('');
@@ -278,11 +282,11 @@ class UnlockSAPID extends React.Component{
                     this.props.ChangeClient('');
                     this.props.MessageSend('');
                 }
-            }, 500)
+            }, 100)
         })
     }
 
-    BackToHome = () => {
+    AutofillAlert = () => {
         if(this.state.BackToHomeEnabled === false){
             this.setState({Message:"You're not doing/change anything"})
         }
@@ -291,38 +295,30 @@ class UnlockSAPID extends React.Component{
                 'Confirmation',
                 'Are you sure all of your work is done?',
                 [
-                    {text:'OK', onPress:() => this.ConfirmBackToHome()},
+                    {text:'OK', onPress:() => this.Autofill()},
                     {text:'Cancel', onPress:() => console.log('cancel')}
                 ]
             )
         }
     }
 
-    NLP = (request) => {
-        Obj = new NLPS();
-        var SAPID;
-        try{
-            SAPID = Obj.Tokenization(request)
-            this.setState({
-                SAPUsername:SAPID
-            })
+    Autofill = () => {
+        if(this.props.RequestType === 'UNLOCKRESET'){
+            this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial';")
         }
-        catch(error){
-            console.log(error)
+        else if(this.props.RequestType === 'UNLOCK'){
+            this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock';")
         }
-        
+        else if(this.props.RequestType === 'EXTEND'){
+            this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, extend';")
+        }
+        this.webview.injectJavaScript("document.getElementById('Done').click();");
     }
 
     componentDidMount(){
         this.GetClient();
         this.GetKey();
-        if(this.props.RequestType === 'EXTEND'){
-            this.NLP(this.props.Request);
-        }
-        else{
-            ;
-        }
-        
+        BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
     }
 
     componentDidUpdate(PrevProps){
@@ -334,87 +330,105 @@ class UnlockSAPID extends React.Component{
         }
     }
 
+    HandleBackButton = () => {
+        this.ConfirmBackToHome()
+        return true;
+    }
+
+    componentWillUnmount(){
+        BackHandler.removeEventListener('hardwareBackPress', this.HandleBackButton);
+    }
+
     render(){
         return(
-            <Content underline={false}>
-                <Form underline={false} style={styles.container}>
-                    <Item floatingLabel>
-                        <Label>Username</Label>
-                        <Input value={this.state.SAPUsername} onChangeText={(value) => this.setState({SAPUsername:value})} />
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Text>Client : </Text>
-                        <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
-                            {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
-                        </Picker>
-                    </Item>
-                    {
-                        this.props.RequestType === 'UNLOCK' || this.props.RequestType === 'UNLOCKRESET' ||  this.props.RequestType === ''?
-                        <ListItem style={styles.CheckBox}>
-                            <CheckBox disabled={false} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
-                            <Body>
-                                <Text>Reset Password</Text>
-                            </Body>
-                        </ListItem>
-                        :
-                        <ListItem style={styles.CheckBox}>
-                            <CheckBox disabled={true} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
-                            <Body>
-                                <Text>Reset Password</Text>
-                            </Body>
-                        </ListItem>
-                    }
-                    
-                    <Item style={styles.ButtonContainer}>
-                        <Button disabled={this.state.UnlockDisabled} rounded style={styles.ButtonUnlock} onPress={()=> this.UnlockSapId()}>
-                            <Text>{this.state.ButtonUnlock}</Text>
-                        </Button>
+            <View style={{flex:1}}>
+                <Content underline={false}>
+                    <Form underline={false} style={styles.container}>
+                        <Item floatingLabel>
+                            <Label>Username</Label>
+                            <Input value={this.state.SAPUsername} onChangeText={(value) => this.setState({SAPUsername:value})} />
+                        </Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Text>Client : </Text>
+                            <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
+                                {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
+                            </Picker>
+                        </Item>
                         {
-                            this.state.LockDisabled ?
-                            <Button disabled={this.state.LockDisabled} rounded style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
-                                <Text>Lock</Text>
-                            </Button>
+                            this.props.RequestType === 'UNLOCK' || this.props.RequestType === 'UNLOCKRESET' ||  this.props.RequestType === ''?
+                            <ListItem style={styles.CheckBox}>
+                                <CheckBox disabled={false} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
+                                <Body>
+                                    <Text>Reset Password</Text>
+                                </Body>
+                            </ListItem>
                             :
-                            <Button disabled={this.state.LockDisabled} rounded danger style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
-                                <Text>Lock</Text>
-                            </Button>
+                            <ListItem style={styles.CheckBox}>
+                                <CheckBox disabled={true} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
+                                <Body>
+                                    <Text>Reset Password</Text>
+                                </Body>
+                            </ListItem>
                         }
-                    </Item>
-                    <Item style={styles.ButtonContainer}>
+                        
+                        <Item style={styles.ButtonContainer}>
+                            <Button disabled={this.state.UnlockDisabled} rounded style={styles.ButtonUnlock} onPress={()=> this.UnlockSapId()}>
+                                <Text>{this.state.ButtonUnlock}</Text>
+                            </Button>
+                            {
+                                this.state.LockDisabled ?
+                                <Button disabled={this.state.LockDisabled} rounded style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
+                                    <Text>Lock</Text>
+                                </Button>
+                                :
+                                <Button disabled={this.state.LockDisabled} rounded danger style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
+                                    <Text>Lock</Text>
+                                </Button>
+                            }
+                        </Item>
+                        <Item style={styles.ButtonContainer}>
+                            {
+                                this.state.ExtendDisabled ?
+                                <Button disabled={this.state.ExtendDisabled} rounded style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
+                                    <Text>Extend SAP ID</Text>
+                                </Button>
+                                :
+                                <Button disabled={this.state.ExtendDisabled} rounded success style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
+                                    <Text>Extend SAP ID</Text>
+                                </Button>
+                            }
+                        </Item>
+                        <Item style={styles.CheckBox}>
+                            <Text>{this.state.Message + ' ' + this.state.ResetPasswordMessage}</Text>
+                        </Item>
+                    </Form>
+                    <Card>
                         {
-                            this.state.ExtendDisabled ?
-                            <Button disabled={this.state.ExtendDisabled} rounded style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
-                                <Text>Extend SAP ID</Text>
-                            </Button>
+                            this.props.Request === '' || this.props.RequestType === '' ?
+                            <CardItem bordered header>  
+                                <Text>This action is not affiliate to request from ES</Text>
+                            </CardItem>
                             :
-                            <Button disabled={this.state.ExtendDisabled} rounded success style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
-                                <Text>Extend SAP ID</Text>
-                            </Button>
+                            <CardItem bordered button onPress={() => this.AutofillAlert()} header>  
+                                <Text>This action is affiliate to request : {this.props.Link} (Click here if you have done your work)</Text>
+                            </CardItem>
                         }
-                    </Item>
-                    <Item style={styles.CheckBox}>
-                        <Text>{this.state.Message + ' ' + this.state.ResetPasswordMessage}</Text>
-                    </Item>
-                </Form>
-                <Card>
-                    {
-                        this.props.Request === '' || this.props.RequestType === '' ?
-                        <CardItem bordered header>  
-                            <Text>This action is not affiliate to request from ES</Text>
+                        
+                        <CardItem bordered>
+                            <Body>
+                                <Text accessible={true} selectable={true}>{this.props.Request  + " client : " + this.props.Client}</Text>
+                                
+                            </Body>
                         </CardItem>
-                        :
-                        <CardItem bordered button onPress={() => this.BackToHome()} header>  
-                            <Text>This action is affiliate to request : {this.props.Link.toString().substr(35,20)} (Click here if you have done your work)</Text>
-                        </CardItem>
-                    }
-                    
-                    <CardItem bordered>
-                        <Body>
-                            <Text accessible={true} selectable={true}>{this.props.Request  + " client : " + this.props.Client}</Text>
-                        </Body>
-                    </CardItem>
-                </Card>
-            </Content>
+                    </Card>
+                </Content>
+                {
+                    this.props.Request === '' || this.props.RequestType === '' ?
+                    null
+                    :
+                    <WebView ref={c => this.webview = c} source={{uri:'https://es.cp.co.id/edco.php?ecsno=' + this.props.Link}} />
+                }
+            </View>
         )
     }
 }
@@ -493,4 +507,4 @@ const MapDispatchToProps = (dispatch) =>{
 
 const UnlockSAPIDRedux = connect(MapStateToProps, MapDispatchToProps)(UnlockSAPID)
 
-export default UnlockSAPIDRedux;
+export default withNavigation(UnlockSAPIDRedux)

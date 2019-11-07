@@ -1,8 +1,14 @@
 import { Text, Form, Item, Label, Input, Button, Picker, CheckBox, Body, ListItem, Content, Toast, Right, Left, Radio, DatePicker, CardItem, Card} from 'native-base';
 import React, { Component } from 'react';
-import {Modal, StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert} from 'react-native'; 
+import {Modal, StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert, View, BackHandler} from 'react-native'; 
 import {connect} from 'react-redux';
+import { withNavigation, StackActions, NavigationActions } from 'react-navigation';
 import DocumentPicker from 'react-native-document-picker';
+import {WebView} from 'react-native-webview';
+
+const BackToHome = StackActions.pop({
+    n:1
+})
 
 var width = Dimensions.get("window").width;
 var height = Dimensions.get("window").height;
@@ -347,7 +353,7 @@ class AssignSAPRole extends React.Component{
         })
     }
 
-    BackToHome = () => {
+    AutofillAlert = () => {
         if(this.state.BackToHomeEnabled === false){
             this.setState({Message:"You're not doing/change anything"})
         }
@@ -356,103 +362,128 @@ class AssignSAPRole extends React.Component{
                 'Confirmation',
                 'Are you sure all of your work is done?',
                 [
-                    {text:'OK', onPress:() => this.ConfirmBackToHome()},
+                    {text:'OK', onPress:() => this.Autofill()},
                     {text:'Cancel', onPress:() => console.log('cancel')}
                 ]
             )
         }
     }
 
+    Autofill = () => {
+        this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, assign role : "+this.props.RoleName+" "+this.props.Valid+"';")
+        this.webview.injectJavaScript("document.getElementById('Done').click();");
+        this.props.ChangeValid('');
+        this.props.ChangeRoleName('');
+    }
+
     componentDidMount(){
         this.GetClient();
         this.GetKey();
+        BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
+    }
+
+    HandleBackButton = () => {
+        this.props.navigation.dispatch(BackToHome);
+        return true;
+    }
+
+    componentWillUnmount(){
+        BackHandler.removeEventListener('hardwareBackPress', this.HandleBackButton);
     }
 
     render(){
         return(
-            <Content underline={false}>
-                <Form underline={false} style={styles.container}>
-                    <Item floatingLabel>
-                        <Label>Username</Label>
-                        <Input onChangeText={(value) => this.setState({SAPUsername:value})} />
-                    </Item>
-                    <Item floatingLabel>
-                        <Label>Role</Label>
-                        <Input onChangeText={(value) => this.setState({SAPRole:value})} />
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Text>Client : </Text>
-                        <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
-                            {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
-                        </Picker>
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Radio selected={this.state.RoleOneTime} onPress={()=>this.HandleOption('o')}/>
-                        <Left style={{marginLeft:25}}>
-                            <Text>One Time</Text>
-                        </Left>
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Radio selected={this.state.RolePermanent} onPress={()=>this.HandleOption('p')}/>
-                        <Left style={{marginLeft:25}}>
-                            <Text>Permanent</Text>
-                        </Left>
-                    </Item>
-                    <Item style={{borderColor: '#ffffff'}}>
-                        <Radio selected={this.state.RoleCustom} onPress={()=>this.HandleOption('c')}/>
-                        <Left style={{marginLeft:25}}>
-                            <Text>Custom</Text>
-                        </Left>
-                    </Item>
-                    {
-                        this.state.RoleCustom ?
-                        <Item>
-                            <Left>
-                                <DatePicker
-                                    placeHolderText='Valid From'
-                                    onDateChange={(date) => this.CustomOption('cf',date)} 
-                                />
+            <View style={{flex:1}}>
+                <Content underline={false}>
+                    <Form underline={false} style={styles.container}>
+                        <Item floatingLabel>
+                            <Label>Username</Label>
+                            <Input onChangeText={(value) => this.setState({SAPUsername:value})} />
+                        </Item>
+                        <Item floatingLabel>
+                            <Label>Role</Label>
+                            <Input onChangeText={(value) => this.setState({SAPRole:value})} />
+                        </Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Text>Client : </Text>
+                            <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
+                                {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
+                            </Picker>
+                        </Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Radio selected={this.state.RoleOneTime} onPress={()=>this.HandleOption('o')}/>
+                            <Left style={{marginLeft:25}}>
+                                <Text>One Time</Text>
                             </Left>
-                            <Body>
-                                <DatePicker
-                                    placeHolderText='Valid To'
-                                    onDateChange={(date) => this.CustomOption('ct',date)} 
-                                />
-                            </Body>
                         </Item>
-                        :
-                        <Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Radio selected={this.state.RolePermanent} onPress={()=>this.HandleOption('p')}/>
+                            <Left style={{marginLeft:25}}>
+                                <Text>Permanent</Text>
+                            </Left>
+                        </Item>
+                        <Item style={{borderColor: '#ffffff'}}>
+                            <Radio selected={this.state.RoleCustom} onPress={()=>this.HandleOption('c')}/>
+                            <Left style={{marginLeft:25}}>
+                                <Text>Custom</Text>
+                            </Left>
+                        </Item>
+                        {
+                            this.state.RoleCustom ?
+                            <Item>
+                                <Left>
+                                    <DatePicker
+                                        placeHolderText='Valid From'
+                                        onDateChange={(date) => this.CustomOption('cf',date)} 
+                                    />
+                                </Left>
+                                <Body>
+                                    <DatePicker
+                                        placeHolderText='Valid To'
+                                        onDateChange={(date) => this.CustomOption('ct',date)} 
+                                    />
+                                </Body>
+                            </Item>
+                            :
+                            <Item>
 
+                            </Item>
+                        }
+                        
+                        <Item style={styles.ButtonContainer}>
+                            <Button rounded style={styles.ButtonUnlock} onPress={()=> this.AssignSAPRole()}>
+                                <Text>{this.state.ButtonText}</Text>
+                            </Button>
                         </Item>
-                    }
-                    
-                    <Item style={styles.ButtonContainer}>
-                        <Button rounded style={styles.ButtonUnlock} onPress={()=> this.AssignSAPRole()}>
-                            <Text>{this.state.ButtonText}</Text>
-                        </Button>
-                    </Item>
-                    <Item style={styles.CheckBox}>
-                        <Text>{this.state.Message}</Text>
-                    </Item>
-                </Form>
-                <Card>
-                    {
-                        this.props.Request === '' ?
-                        <CardItem bordered header>  
-                            <Text>This action is not affiliate to request from ES</Text>
+                        <Item style={styles.CheckBox}>
+                            <Text>{this.state.Message}</Text>
+                        </Item>
+                    </Form>
+                    <Card>
+                        {
+                            this.props.Request === '' ?
+                            <CardItem bordered header>  
+                                <Text>This action is not affiliate to request from ES</Text>
+                            </CardItem>
+                            :
+                            <CardItem bordered button onPress={() => this.AutofillAlert()} header>  
+                                <Text>This action is affiliate to request : {this.props.Link} (Click here if you have done your work)</Text>
+                            </CardItem>
+                        }
+                        <CardItem bordered>
+                            <Body>
+                                <Text accessible={true} selectable={true}>{this.props.Request + " client : " + this.props.Client}</Text>
+                            </Body>
                         </CardItem>
-                        :
-                        <CardItem bordered button onPress={() => this.BackToHome()} header>  
-                            <Text>This action is affiliate to request : {this.props.Link.toString().substr(35,20)} (Click here if you have done your work)</Text>
-                        </CardItem>
-                    }
-                    <CardItem bordered>
-                        <Body>
-                            <Text accessible={true} selectable={true}>{this.props.Request + " client : " + this.props.Client}</Text>
-                        </Body>
-                    </CardItem>
-                </Card>
-            </Content>
+                    </Card>
+                </Content>
+                {
+                    this.props.Request === '' ?
+                    null
+                    :
+                    <WebView ref={c => this.webview = c} source={{uri:'https://es.cp.co.id/edco.php?ecsno=' + this.props.Link}} />
+                }
+            </View>
         )
     }
 }
@@ -538,4 +569,4 @@ const MapDispatchToProps = (dispatch) =>{
 
 const AssignSAPRoleRedux = connect(MapStateToProps, MapDispatchToProps)(AssignSAPRole)
 
-export default AssignSAPRoleRedux;
+export default withNavigation(AssignSAPRoleRedux);

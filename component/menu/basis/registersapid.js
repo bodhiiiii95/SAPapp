@@ -1,8 +1,12 @@
 import { Text, Form, Item, Label, Input, Button, Picker, CheckBox, Body, ListItem, Content, Toast} from 'native-base';
 import React, { Component } from 'react';
-import {StyleSheet, Dimensions, AsyncStorage, Keyboard} from 'react-native'; 
+import {StyleSheet, Dimensions, AsyncStorage, Keyboard, BackHandler} from 'react-native'; 
 import {connect} from 'react-redux';
+import { withNavigation, StackActions, NavigationActions } from 'react-navigation';
 
+const BackToHome = StackActions.pop({
+    n:1
+})
 
 var width = Dimensions.get("window").width;
 var height = Dimensions.get("window").height;
@@ -121,6 +125,16 @@ class RegisterSAPID extends React.Component{
     componentDidMount(){
         this.GetClient();
         this.GetKey();
+        BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
+    }
+
+    HandleBackButton = () => {
+        this.props.navigation.dispatch(BackToHome);
+        return true;
+    }
+
+    componentWillUnmount(){
+        BackHandler.removeEventListener('hardwareBackPress', this.HandleBackButton);
     }
 
     render(){
@@ -201,4 +215,4 @@ const MapDispatchToProps = (dispatch) =>{
 
 const RegisterSAPIDRedux = connect(MapStateToProps, MapDispatchToProps)(RegisterSAPID)
 
-export default RegisterSAPIDRedux;
+export default withNavigation(RegisterSAPIDRedux);

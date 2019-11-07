@@ -1,65 +1,437 @@
 import React, {Component} from 'react';
-import { withNavigation } from 'react-navigation';
-import {Container, Text, Card, Spinner, Drawer, Button, Header, Left, Icon, Toast, Body, View, Right, Root, Content, CardItem, Switch, Input} from 'native-base';
-import {StyleSheet, RefreshControl, Dimensions, BackHandler, Animated, Alert} from 'react-native';
+import { withNavigation, StackActions, NavigationActions } from 'react-navigation';
+import {StyleSheet, ImageBackground, Dimensions, BackHandler, Animated, Alert, ScrollView, Text, View, StatusBar, Image, TouchableHighlight, TouchableWithoutFeedback} from 'react-native';
+import {Root, Icon} from 'native-base';
 import {WebView} from 'react-native-webview';
 import AsyncStorage from '@react-native-community/async-storage';
 import SideBar from './drawer.js';
 import {connect} from 'react-redux';
 import UnlockSAPID from './basis/unlocksapid.js';
-import RegisterSAPID from './basis/registersapid.js';
+
 import AssignSAPRole from './basis/assignsaprole.js';
-import CreateSAPID from './basis/createsapid.js';
+
+import BlurOverlay,{closeOverlay,openOverlay} from 'react-native-blur-overlay';
 
 var width = Dimensions.get("window").width;
 var height = Dimensions.get("window").height;
-let AlwaysGrabRequest;
 
-const JSScriptConstValue = "window.ReactNativeWebView.postMessage(document.getElementById('content_edco').innerHTML);";
+let JSSCript = "window.ReactNativeWebView.postMessage(document.body.innerHTML);";
+let HTMLText = "";
+let EDCO = "";
+let EDCOReject = "";
+let EBASIS = "";
+let IconType = "angle-double-up";
+let ReqPackage = [];
+let ReqType = "";
+let Client = "";
+let SAPID = "";
+let EBASISSourceClient = "";
+let EBASISClient = [];
+//let CardWidth = 0;
+//let CardHeight = 0;
+const PreventBack = StackActions.reset({
+    index: 0,
+    actions:[NavigationActions.navigate({routeName:'Login'})],
+});
 
 class MenuApp extends React.Component{
-    constructor(props){
-        super(props);
 
+    constructor(props){
+        super(props)
         this.state = {
-            ScreenType:'',
-            SAPUsername:'',
-            test:'',
-            HTML:'',
-            HTMLParser:null,
-            RequestNumber:[],
-            ListKosong:true,
-            WebViewSize: new Animated.Value(2),
-            CardSize:new Animated.Value(0),
-            WebViewMode:true,
-            JSScriptState:JSScriptConstValue,
-            RequestHTMLParser:null,
-            JSParameter:'',
-            SAPClientHTMLParser:null,
-            WebLink:'https://es.cp.co.id/mybox.php',
-            DoneValue:'',
-            AutofillState:'',
-            loading:false,
-            refreshing:false,
-            EsPassword:'',
             AppUsername:'',
-            DoneRequestButtonDisabled:true,
-            DoneRequestButtonVisible:true,
-            LinkNow:'',
-            CardClicked:null,
-            CardClickValue:'',
-            CardClickRequest:'',
-            LoadDone:false,
-            ConvertToList:false,
+            EsPassword:'',
+            CardWidth:0,
+            CardHeight:0,
+            ReqContainer:[],
+            EbasisContainer:[],
+            ScrapState:true,
+            CardMode:false,
+            CardContainer:new Animated.Value(height),
+            AtHome:true,
+            Username:'',
+            WebViewDisplay:true,
+            ViewRef:null,
+            MenuSize:0,
+            LoadingRequest:false,
+            MenuMode:false,
+            MenuShowDisabled:false,
         }
     }
 
-    CloseDrawer = () => {
-        this.drawer._root.close()
+    AutoLogin = () => {
+        this.webview.injectJavaScript("document.getElementById('email_txt').value = '"+this.state.AppUsername+"';");
+        this.webview.injectJavaScript("document.getElementById('pass_txt').value = '"+this.state.EsPassword+"';");
+        this.webview.injectJavaScript("document.getElementById('btnLogin').click();");
+
+        this.setState({ScrapState:false});
+        
     }
 
-    OpenDrawer = () => {
-        this.drawer._root.open()
+    GetHTML = (event) => {
+        this.webview.injectJavaScript(JSSCript);
+        if(JSSCript === "window.ReactNativeWebView.postMessage(document.body.innerHTML);"){
+            HTMLText = event.nativeEvent.data
+        }
+        else if(JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'RequestType':document.getElementById('act_slc').value,'Client':document.getElementById('txtSAPClient').value, 'UnlockSAPID':document.getElementById('txtSAPID1').value,'UnlockResetVal':document.getElementById('cbReset').checked.toString(), 'ExtendSAPID':document.getElementById('txtSAPID').value}));"){
+            try{
+                let All = JSON.parse(event.nativeEvent.data)
+                ReqPackage = [];
+                ReqPackage.push(All.RequestType)
+                ReqPackage.push(All.Client)
+                ReqPackage.push(All.UnlockSAPID)
+                ReqPackage.push(All.UnlockResetVal)
+                ReqPackage.push(All.ExtendSAPID)
+            }
+            catch(e){
+                console.log(e)
+            }
+        }
+        //console.log(HTMLText);
+    }
+    
+    GetRequestDetail = () => {
+        this.webview.injectJavaScript("window.ReactNativeWebView.postMessage(window.location.replace('https://es.cp.co.id/edco.php?ecsno=HBAY-1910281114-SLT'));");
+        //JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('content_form').innerHTML);";
+        JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('content_form').innerHTML);";
+    }
+
+    GetESHTMLMenu = () => {
+        this.setState({MenuShowDisabled:true}, () => {
+            try{
+                if(this.state.AtHome === true){
+                    if(this.state.CardMode == true){
+                        IconType="angle-double-up"
+                        this.setState({CardMode:false}, () => {
+                            this.HandleCardContainerAnimationDown();
+                        })
+                    }
+                    else if(this.state.CardMode == false){
+                        
+                        this.HandleCardContainerAnimationUp();
+                        IconType="times"
+                        this.setState({CardMode:true}, () => {
+                            if(this.state.ScrapState === true){
+                                ;
+                            }
+                            else{
+                                const HTMLParser = require('fast-html-parser');
+                                var root = HTMLParser.parse(HTMLText);
+                                EDCO = root.querySelector('#content_edco');
+                                EBASIS = root.querySelector('#content_ebasis')
+                                let ReqPos = 4;
+    
+                                if(EDCO['childNodes'].length !== 0){
+                                    let ArrayRequest = EDCO['childNodes'][1]['childNodes'][1]['childNodes'];
+                                    let TotalRequest = ArrayRequest.length - 4;
+                                    let i = 0;
+                                    let Request = [];
+    
+                                    this.setState({ReqContainer:[]}, () => {
+                                        for(i = 4; i < ReqPos+TotalRequest; i++){
+                                            Request.push(ArrayRequest[i]);
+                                        }
+                                        //console.log(Ebasis)
+                                        this.setState({ReqContainer:[...Request]})
+                                    });
+    
+                                }
+                                else{
+                                    ;
+                                }
+    
+                                if(EBASIS['childNodes'].length != 0){
+                                    let ArrayEbasis = EBASIS['childNodes'][3]['childNodes'][1]['childNodes'];
+                                    let TotalEbasis = ArrayEbasis.length - 4;
+                                    let j = 0;
+                                    let Ebasis = [];
+    
+                                    this.setState({ReqContainer:[], EbasisContainer:[]}, () => {
+                                        for(j = 4; j < ReqPos+TotalEbasis; j++){
+                                            Ebasis.push(ArrayEbasis[j]);
+                                            
+                                        }
+                                        //console.log(Ebasis)
+                                        this.setState({EbasisContainer:[...Ebasis]})
+                                    });
+                                }
+                                else{
+                                    ;
+                                }
+                            }
+                        })
+                    }
+                }
+                else{
+                    this.setState({AtHome:true}, () => {
+                        JSSCript = "window.ReactNativeWebView.postMessage(document.body.innerHTML);"
+                        this.webview.injectJavaScript("window.location.href='https://es.cp.co.id/mybox.php'")
+    
+                        if(this.state.CardMode === true){
+                            IconType="angle-double-up"
+                            this.setState({CardMode:false}, () => {
+                                this.HandleCardContainerAnimationDown();
+                            })
+                        }
+                        else if(this.state.CardMode === false){
+                            
+                            this.HandleCardContainerAnimationUp();
+                            IconType="times"
+                            this.setState({CardMode:true}, () => {
+                                if(this.state.ScrapState === true){
+                                    ;
+                                }
+                                else{
+                                    const HTMLParser = require('fast-html-parser');
+                                    var root = HTMLParser.parse(HTMLText);
+                                    EDCO = root.querySelector('#content_edco');
+                                    EBASIS = root.querySelector('#content_ebasis')
+                                    let ReqPos = 4;
+                                    if(EDCO['childNodes'].length !== 0){
+                                        let ArrayRequest = EDCO['childNodes'][1]['childNodes'][1]['childNodes'];
+                                        let TotalRequest = ArrayRequest.length - 4;
+                                        let i = 0;
+                                        let Request = [];
+        
+                                        this.setState({ReqContainer:[]}, () => {
+                                            for(i = 4; i < ReqPos+TotalRequest; i++){
+                                                Request.push(ArrayRequest[i]);
+                                            }
+                                            //console.log(Ebasis)
+                                            this.setState({ReqContainer:[...Request]})
+                                        });
+        
+                                    }
+                                    else{
+                                        ;
+                                    }
+        
+                                    if(EBASIS['childNodes'].length != 0){
+                                        let ArrayEbasis = EBASIS['childNodes'][3]['childNodes'][1]['childNodes'];
+                                        let TotalEbasis = ArrayEbasis.length - 4;
+                                        let j = 0;
+                                        let Ebasis = [];
+        
+                                        this.setState({ReqContainer:[], EbasisContainer:[]}, () => {
+                                            for(j = 4; j < ReqPos+TotalEbasis; j++){
+                                                Ebasis.push(ArrayEbasis[j]);
+                                                
+                                            }
+                                            //console.log(Ebasis)
+                                            this.setState({EbasisContainer:[...Ebasis]})
+                                        });
+                                    }
+                                    else{
+                                        ;
+                                    }
+                                }
+                            })
+                        }
+                    })
+                }
+            }
+            catch(e){
+                console.log(e)
+            }
+        })
+    }
+
+    RefreshRequest = () => {
+        var GetRequestRefreshed;
+        clearInterval(GetRequestRefreshed)
+        this.webview.injectJavaScript("window.location.href='https://es.cp.co.id/mybox.php'")
+        JSSCript = "window.ReactNativeWebView.postMessage(document.body.innerHTML);";
+        this.webview.injectJavaScript("window.ReactNativeWebView.postMessage(document.body.innerHTML);")
+        const HTMLParser = require('fast-html-parser');
+        var root = HTMLParser.parse(HTMLText);
+        this.setState({ReqContainer:[], ScrapState:true}, () => {
+            GetRequestRefreshed = setInterval(()=> {
+                if(this.state.ScrapState === true || root.querySelector('#content_edco') === undefined){
+                    ;//console.log(root.querySelector('#content_edco'))
+                }
+                else{
+                    EDCO = root.querySelector('#content_edco');
+                    let ArrayRequest = EDCO['childNodes'][1]['childNodes'][1]['childNodes'];
+                    
+                    let TotalRequest = ArrayRequest.length - 4
+                    let ReqPos = 4;
+                    let i = 0
+                    let Request = [];
+
+                    for(i = 4; i < ReqPos+TotalRequest; i++){
+                        Request.push(ArrayRequest[i]);
+                    }
+                    this.setState({ReqContainer:[...Request]})
+                    clearInterval(GetRequestRefreshed);
+                }
+            },500)
+            
+        })
+    }
+
+    GetCardSize = (cwidth, cheight) => {
+        this.setState({CardWidth:cwidth})
+    }
+
+    HandleCardContainerAnimationUp = () => {
+        Animated.decay(this.state.CardContainer,{
+            velocity:-height/202,
+            deceleration:0.995
+        }).start(() => this.setState({MenuShowDisabled:false}))
+    }
+
+    HandleCardContainerAnimationDown = () => {
+        Animated.decay(this.state.CardContainer,{
+            velocity:height/202,
+            deceleration:0.995
+        }).start(() => this.setState({MenuShowDisabled:false}))
+    }
+
+    RequestCardClicked = (value, EsMessage) => {
+        console.log(ReqPackage)
+        this.setState({LoadingRequest:true}, ()=> {
+            let Timeout = 0;
+            this.webview.injectJavaScript("window.location.replace('https://es.cp.co.id/edco.php?ecsno="+value+"')");
+            JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'RequestType':document.getElementById('act_slc').value,'Client':document.getElementById('txtSAPClient').value, 'UnlockSAPID':document.getElementById('txtSAPID1').value,'UnlockResetVal':document.getElementById('cbReset').checked.toString(), 'ExtendSAPID':document.getElementById('txtSAPID').value}));";
+            var ParaMustNotNull  = setInterval(() => {
+                if(ReqPackage.length === 0){
+                    console.log(this.props.Link)
+                }
+                else{
+                    if(ReqPackage[0] === "DA105"){
+                        this.props.ChangeClient(ReqPackage[1]);
+                        this.props.ChangeSAPID(ReqPackage[2]);
+                        this.props.ChangeLink(value);
+                        this.props.MessageSend(EsMessage);
+                        if(ReqPackage[3] === "true"){
+                            this.props.ChangeRequestType("UNLOCKRESET");
+                            this.props.ChangeResetState("true")
+                        }
+                        else{
+                            this.props.ChangeRequestType("UNLOCK");
+                            this.props.ChangeResetState("false")
+                        }
+                        this.props.navigation.navigate('UnlockSAPID');
+                        clearInterval(ParaMustNotNull)
+                        this.setState({AtHome:false, LoadingRequest:false})
+                    }
+                    else if(ReqPackage[0] === "DA104"){
+                        this.props.ChangeClient(ReqPackage[1]);
+                        this.props.ChangeSAPID(ReqPackage[4]);
+                        this.props.ChangeLink(value);
+                        this.props.MessageSend(EsMessage);
+                        this.props.ChangeRequestType("UNLOCKRESET");
+                        this.props.ChangeResetState("true")
+                        this.props.navigation.navigate('UnlockSAPID');
+                        clearInterval(ParaMustNotNull)
+                        this.setState({AtHome:false, LoadingRequest:false})
+                    }
+                    else if(ReqPackage[0] === "DA101"){
+                        this.props.ChangeClient(ReqPackage[1]);
+                        this.props.MessageSend(EsMessage);
+                        this.props.ChangeLink(value);
+                        this.props.ChangeRequestType("CREATESAPID");
+                        this.props.navigation.navigate('CreateSAPID');
+                        clearInterval(ParaMustNotNull)
+                        this.setState({AtHome:false, LoadingRequest:false})
+                    }
+                    else if(ReqPackage[0] === "DA106"){
+                        this.props.ChangeClient(ReqPackage[1]);
+                        this.props.ChangeSAPID(ReqPackage[4]);
+                        this.props.ChangeLink(value);
+                        this.props.MessageSend(EsMessage);
+                        this.props.ChangeRequestType("EXTEND");
+                        this.props.ChangeResetState("false")
+                        this.props.navigation.navigate('UnlockSAPID');
+                        clearInterval(ParaMustNotNull)
+                        this.setState({AtHome:false, LoadingRequest:false})
+                    }
+                    else if(ReqPackage[0] === "DA204"){
+                        this.props.ChangeClient(ReqPackage[1]);
+                        this.props.ChangeLink(value);
+                        this.props.MessageSend(EsMessage);
+                        this.props.ChangeRequestType("ASSIGNROLE");
+                        this.props.navigation.navigate('AssignSAPRole');
+                        clearInterval(ParaMustNotNull)
+                        this.setState({AtHome:false, LoadingRequest:false})
+                    }
+                    else{
+                        Timeout = Timeout + 1
+                        if(Timeout === 6){
+                            Alert.alert(
+                                "Request Status",
+                                "Request is not supported or crawling not complete",
+                                [
+                                    {text:'Okay'}
+                                ]
+                            )
+                            clearInterval(ParaMustNotNull)
+                            Timeout = 0
+                            this.setState({LoadingRequest:false})
+                        }
+                        else{
+                            ;
+                        }
+                    }
+                }
+            }, 1000)
+        })
+    }
+
+    BasisRequestCardClick = (value) => {
+        this.props.ChangeLink(value)
+        this.props.ChangeRequestType("TRANSPORT");
+        this.props.navigation.navigate('TransportRole');
+    }
+
+    GetMenuSize = (WidthHeight) =>{
+        this.setState({MenuSize:WidthHeight})
+    }
+
+    MenuClickControler = (event) =>{
+        this.setState({MenuMode:true}, () => {
+            let ClearRequestType = setInterval(() => {
+                if(this.props.Request !== '' || this.props.RequestType !== '' || this.props.SAPID !== '' || this.props.Client !== '' || this.props.ResetState !== '' || this.props.Link !== ''){
+                    this.props.ChangeRequestType('');
+                    this.props.ChangeSAPID('');
+                    this.props.ChangeClient('');
+                    this.props.ChangeResetState('');
+                    this.props.MessageSend('');
+                    this.props.ChangeLink('');
+                    console.log(this.props.Request)
+                }
+                else{
+                    clearInterval(ClearRequestType)
+                    if(event === '1'){
+                        this.props.navigation.navigate('UnlockSAPID');
+                    }
+                    else if(event === '2'){
+                        this.props.navigation.navigate('RegisterSAPID');
+                    }
+                    else if(event === '3'){
+                        this.props.navigation.navigate('CreateSAPID');
+                    }
+                    else if(event === '4'){
+                        this.props.navigation.navigate('AssignSAPRole');
+                    }
+                    else if(event === '5'){
+                        this.props.navigation.navigate('TransportRole');
+                    }
+                }
+            },500)
+        })
+    }
+
+    CloseMenu = () => {
+        this.setState({MenuMode:false}, () => {
+            closeOverlay();
+        })
+    }
+
+    OpenMenu = () => {
+        this.setState({MenuMode:true}, () => {
+            openOverlay();
+        })
     }
 
     DecryptSendPassword = (value) => {
@@ -72,799 +444,238 @@ class MenuApp extends React.Component{
         return AESdecrypt.toString(CryptoJS.enc.Utf8);
     }
 
-    async GetKey(){
+    async GetKey() {
         try{
-            const value = await AsyncStorage.getItem('user', (err, result) => {
+            var GetKey = AsyncStorage.getItem('user', (err, result) => {
                 if(result){
-                    let ResultParsed = JSON.parse(result);
-                    this.setState({AppUsername:ResultParsed.username})
-                    this.setState({EsPassword:this.DecryptSendPassword(ResultParsed.espassword)})
-                }
-                else{
-                    console.log("error")
+                    let ResultParsed = JSON.parse(result)
+                    let DecryptedPassword = this.DecryptSendPassword(ResultParsed.password)
+                    this.setState({AppUsername:ResultParsed.username, EsPassword:this.DecryptSendPassword(ResultParsed.espassword)})
                 }
             })
+        }
+        catch(e){
+            console.log(e)
+        }
+    }
+
+    async DeleteKey() {
+        try{
+            await AsyncStorage.removeItem('user');
+            this.webview.injectJavaScript("window.location.href='https://es.cp.co.id/logout.php'")
         }
         catch(error){
             console.log(error)
         }
     }
 
-    Loadweb = (value) =>{
-        if(this.state.LoadDone === true && this.state.ConvertToList === true){
-            const HTMLParser = require('fast-html-parser');
-            var root = HTMLParser.parse(value);
-            if(this.state.JSScriptState === JSScriptConstValue){
-                if(root.querySelector('.general_table') === '' || root.querySelector('.general_table') === null){
-                    if(this.state.ListKosong === false){
-                        //this.setState({ListKosong:true});
-                    }
-                    else{
-                        //this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('content_ur').innerHTML);"});
-                        ;
-                    }
-                }
-                else{   
-                    if(this.state.HTMLParser === null || this.state.HTMLParser === ''){
-                        ;
-                        this.setState({HTMLParser:root.querySelector('.general_table'), ListKosong:false})
-                    }
-                    else{
-                        ;
-                    }
-                }
-            }
-            else{
-                //console.log(root.querySelector('.general_table'));
-            }
-        }
-        else{
-            ;//console.log('loading belum beres');
-        }
+    Logout = () => {
+        this.DeleteKey();
+        this.props.navigation.dispatch(PreventBack);
     }
 
-    LoadRequest = (value) =>{
-        const HTMLParser = require('fast-html-parser');
-
-        var root = HTMLParser.parse(value);
-
-        this.setState({RequestHTMLParser:root.querySelector('#content_form')})
-    }
-
-    GetSAPClient = (value) => {
-        this.setState({SAPClientHTMLParser:value}, () => {
-            if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(document.getElementById('txtSAPClient').value);"){
-                if(value.toString().length > 3){
-                    ;
-                }
-                else{
-                    this.props.ChangeClient(value)
-                }
-            }
-            else if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(document.getElementById('txtSAPID1').value);"){
-                if(value.toString().length > 12){
-                    ;
-                }
-                else{
-                    var regex = /(\b[A-z.])\w+/g;
-                    if(regex.test(value) === false){
-                        ;
-                    }
-                    else{
-                        this.props.ChangeSAPID(value)
-                    }
-                }
-            }
-            else if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(document.getElementById('txtSAPID').value);"){
-                if(value.toString().length > 12){
-                    ;
-                }
-                else{
-                    var regex = /([A-z.])\w+/
-                    if(regex.test(value) === false){
-                        ;
-                    }
-                    else{
-                        this.props.ChangeSAPID(value)
-                    }
-                }
-            }
-            else if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(document.getElementById('cbReset').checked);"){
-                if(value === true || value.toString() === 'true'){
-                    this.props.ChangeResetState(value)
-                }
-                else if(value === false || value.toString() === 'false'){
-                    this.props.ChangeResetState(value)
-                }
-                else{
-                    //console.log(value);
-                }
-            }
-            else{
-                ;//console.log(value);
-            }
-        })
-    }
-
-    GetLink = (value) => {
-        if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(window.location.href)"){
-            if(value === '' || value === null){
-                ;
-            }
-            else{
-                this.setState({LinkNow:value})
-            }
-        }
-        else{
-            ;
-        }
-    }
-
-    GetHTML = (value, JSScript) => {
-        this.webview.injectJavaScript(JSScript);
-        this.setState({HTML:value}, () => {
-            this.Loadweb(this.state.HTML);
-            this.LoadRequest(this.state.HTML);
-            this.GetSAPClient(this.state.HTML);
-            this.GetLink(this.state.HTML);
-        });
-    }
-
-    OnChangeSwitch = () => {
-        this.setState({refreshing:true});
-        this.webview.injectJavaScript("location.replace('https://es.cp.co.id/mybox.php')");
-        let ClearRequestMessage = setInterval(() => {
-            if(this.props.Request !== '' || this.props.Link !== 'https://es.cp.co.id/mybox.php'){
-                this.props.MessageSend('');
-                this.props.ChangeLink('https://es.cp.co.id/mybox.php');
-            }
-            else{
-                clearInterval(ClearRequestMessage)
-                let ClearRequestType = setInterval(() => {
-                    if(this.props.RequestType !== '' || this.props.SAPID !== '' || this.props.Client !== '' || this.props.ResetState !== ''){
-                        this.props.ChangeRequestType('');
-                        this.props.ChangeSAPID('');
-                        this.props.ChangeClient('');
-                        this.props.ChangeResetState('');
-                    }
-                    else{
-                        clearInterval(ClearRequestType)
-                        this.setState({JSScriptState:JSScriptConstValue, RequestNumber:[], ConvertToList:true}, () => {
-                            if(this.state.WebViewMode === true){
-                                this.setState({WebViewMode:false, DoneRequestButtonVisible:false}, () => {
-                                    let RequestNumberMustEmpty = setInterval(()=>{
-                                        if(this.state.RequestNumber.length !== 0){
-                                            this.setState({RequestNumber:[]});
-                                        }
-                                        else{
-                                            clearInterval(RequestNumberMustEmpty);
-                                            Animated.timing(this.state.WebViewSize,{
-                                                toValue:0,
-                                                duration:500
-                                            }).start();
-                                            Animated.timing(this.state.CardSize,{
-                                                toValue:2,
-                                                duration:500
-                                            }).start();
-                                        }
-                                    }, 500);
-                                    this.RefreshRequest();
-                                })
-                            }
-                            else{
-                                this.setState({WebViewMode:true, DoneRequestButtonVisible:true, RequestNumber:[], ConvertToList:false}, () => {
-                                    Animated.timing(this.state.WebViewSize,{
-                                        toValue:2,
-                                        duration:500
-                                    }).start();
-                                    Animated.timing(this.state.CardSize,{
-                                        toValue:0,
-                                        duration:500
-                                    }).start();
-                                    this.setState({refreshing:false})
-                                })
-                            }
-                        });
-                    }
-                },500)
-            }
-        },500)
-    }
-
-    RefreshRequest = () => {
-        this.webview.injectJavaScript("location.reload()");
-        if(this.state.refreshing === true && this.state.SAPClientHTMLParser === null){
-            ;
-        }
-        else{
-            this.setState({refreshing:true, SAPClientHTMLParser:null, RequestNumber:[]}, ()=>{
-                this.GetRequestFunction();
-            });
-        }
-    }
-
-    GetRequestFunction = () =>{
-        clearInterval(AlwaysGrabRequest);
-        this.setState({JSScriptState:JSScriptConstValue}, () => {
-            AlwaysGrabRequest = setInterval(() => {
-                if(this.state.HTMLParser === null || this.state.HTMLParser === ''){
-                    ;//this.setState({loading:true});
-                    if(this.state.ListKosong === false){
-                        this.setState({ListKosong:true})
-                    }
-                    else{
-                        ;
-                    }
-                }
-                else{
-                    clearInterval(AlwaysGrabRequest);
-                    try{
-                        var TotalRequest = this.state.HTMLParser['childNodes'][1]['childNodes'].length - 4;
-                
-                        let append = [];
-                        for(let i = 0; i < TotalRequest; i++){
-                            let j = i + 4;
-                            append.push(this.state.HTMLParser['childNodes'][1]['childNodes'][j])
-                        }
-                        
-                        if(append.length === 0){
-                            this.setState({ListKosong:true, loading:false, refreshing:false, HTMLParser:''});
-                            append.length = 0;
-                        }
-                        else{
-                            this.setState({RequestNumber:[...append]}, () => {
-                                append.length = 0;
-                                this.setState({HTMLParser:'', ListKosong:false, loading:false, refreshing:false});
-                            });
-                        }
-    
-                    }
-                    catch(e){
-                        this.OnChangeSwitch();
-                    }
-                }
-            }, 500)
-        });
-    }
-
-    CardClickStatus = (value, request) =>{
-        this.setState({loading:true, DoneRequestButtonVisible:true, CardClickValue:value, CardClickRequest:request, CardClicked:true}, ()=> {
-            this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('page_title').innerHTML);"}, ()=>{
-                this.webview.injectJavaScript("window.ReactNativeWebView.postMessage(window.location.replace('https://es.cp.co.id/edco.php?ecsno="+value+"'));");
+    HandleBackButton = () => {
+        if(this.state.CardMode === true){
+            IconType="angle-double-up"
+            this.setState({CardMode:false}, () => {
+                this.HandleCardContainerAnimationDown();
             })
-        });
-    }   
-
-    CardClick = (value, request) => {
-        this.setState({CardClicked:false})
-        let Get;
-        this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('page_title').innerHTML);"}, () =>{
-            Get = setInterval(()=>{
-                if(this.state.RequestHTMLParser === null || this.state.RequestHTMLParser === ''){
-                    ;
-                }
-                else{
-                    clearInterval(Get);
-                    let RequestValue = this.state.RequestHTMLParser['childNodes'][1]['childNodes'][1]['childNodes'][1]['childNodes'][16]['rawAttrs'].toString();
-                    if(RequestValue.includes("DA105")){
-                        let GetClientInterval = setInterval(() => {
-                            this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPClient').value);"},() => {
-                                if(this.props.Client === null || this.props.Client == ''){
-                                    ;
-                                }
-                                else{
-                                    this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPID1').value);"}, () =>{
-                                        let GetSAPID = setInterval(() => {
-                                            if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(document.getElementById('txtSAPID1').value);"){
-                                                if(this.props.SAPID === '' || this.props.SAPID === null){
-                                                }
-                                                else{
-                                                    this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('cbReset').checked);"}, () => {
-                                                        let GetResetState = setInterval(() => {
-                                                            if(this.state.JSScriptState !== "window.ReactNativeWebView.postMessage(document.getElementById('cbReset').checked);"){
-                                                            }
-                                                            else{
-                                                                if(this.props.ResetState === '' | this.props.ResetState === null){
-                                                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                                                }
-                                                                else{
-                                                                    if(this.props.ResetState === true || this.props.ResetState === 'true'){
-                                                                        this.props.ChangeRequestType("UNLOCKRESET");
-                                                                    }
-                                                                    else if(this.props.ResetState === false || this.props.ResetState === 'false'){
-                                                                        this.props.ChangeRequestType("UNLOCK")
-                                                                    }
-                                                                    clearInterval(GetResetState);
-                                                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                                                    this.props.SelectMenuType("UNLOCKSAPID");
-                                                                    this.setState({loading:false});
-                                                                    this.setState({WebViewMode:true}, () => {
-                                                                        this.setState({JSScriptState:JSScriptConstValue});
-                                                                        Animated.timing(this.state.WebViewSize,{
-                                                                            toValue:2,
-                                                                            duration:500
-                                                                        }).start();
-                                                                        Animated.timing(this.state.CardSize,{
-                                                                            toValue:0,
-                                                                            duration:500
-                                                                        }).start();
-                                                                    })
-                                                                }
-                                                            }
-                                                        }, 500);
-                                                    })
-                                                    clearInterval(GetSAPID);
-                                                }
-                                            }
-                                            else{
-                                                ;
-                                            }
-                                        }, 500);
-                                    })
-                                    clearInterval(GetClientInterval);
-                                }
-                            })
-                        }, 500)
-                    }
-                    else if(RequestValue.includes("DA104")){
-                        let GetClientInterval = setInterval(() => {
-                            this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPClient').value);"}, () => {
-                                if(this.props.Client === null || this.props.Client === ''){
-                                    ;
-                                }
-                                else{
-                                    clearInterval(GetClientInterval);
-                                    let GETSAPID = setInterval(() => {
-                                        this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPID').value);"},() => {
-                                            if(this.state.JSScriptState === "window.ReactNativeWebView.postMessage(document.getElementById('txtSAPID').value);"){
-                                                if(this.props.SAPID === '' || this.props.SAPID === null){
-                                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                                }
-                                                else{
-                                                    clearInterval(GETSAPID)
-                                                    this.props.SelectMenuType("UNLOCKSAPID");
-                                                    this.setState({loading:false});
-                                                    this.props.ChangeRequestType("UNLOCKRESET");
-                                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                                    this.props.ChangeResetState("true")
-                                                    this.setState({WebViewMode:true}, () => {
-                                                        this.setState({JSScriptState:JSScriptConstValue});
-                                                        Animated.timing(this.state.WebViewSize,{
-                                                            toValue:2,
-                                                            duration:500
-                                                        }).start();
-                                                        Animated.timing(this.state.CardSize,{
-                                                            toValue:0,
-                                                            duration:500
-                                                        }).start();
-                                                    })
-                                                }
-                                            }
-                                            else{
-                                                ;
-                                            }
-                                        })
-                                    },500)
-                                }
-                            })
-                        }, 500)
-                    }
-                    else if(RequestValue.includes("DA106")){
-                        let GetClientInterval = setInterval(() => {
-                            this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPClient').value);"}, () => {
-                                if(this.props.Client === null || this.props.Client === ''){
-                                    ;
-                                }
-                                else{
-                                    clearInterval(Get);
-                                    if(this.props.Client === null || this.props.Client == ''){
-                                        this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                    }
-                                    else{
-                                        clearInterval(GetClientInterval);
-                                        this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                        this.props.SelectMenuType("UNLOCKSAPID");
-                                        this.setState({loading:false});
-                                        this.props.ChangeRequestType("EXTEND");
-                                        this.setState({WebViewMode:true}, () => {
-                                            this.setState({JSScriptState:JSScriptConstValue});
-                                            Animated.timing(this.state.WebViewSize,{
-                                                toValue:2,
-                                                duration:500
-                                            }).start();
-                                            Animated.timing(this.state.CardSize,{
-                                                toValue:0,
-                                                duration:500
-                                            }).start();
-                                        })
-                                    }
-                                }
-                            })
-                        }, 500)
-                    }
-                    else if(RequestValue.includes("DA204")){
-                        clearInterval(Get);
-                        let GetClientInterval = setInterval(() => {
-                            this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPClient').value);"}, () => {
-                                if(this.props.Client === null || this.props.Client === ''){
-                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                }
-                                else{
-                                    clearInterval(GetClientInterval);
-                                    this.props.SelectMenuType("ASSIGNSAPROLE");
-                                    this.setState({loading:false});
-                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                    this.props.ChangeRequestType("ASSIGNROLE");
-                                    this.setState({WebViewMode:true}, () => {
-                                        this.setState({JSScriptState:JSScriptConstValue});
-                                        Animated.timing(this.state.WebViewSize,{
-                                            toValue:2,
-                                            duration:500
-                                        }).start();
-                                        Animated.timing(this.state.CardSize,{
-                                            toValue:0,
-                                            duration:500
-                                        }).start();
-                                    })
-                                }
-                            })
-                        }, 500)
-                    }
-                    else if(RequestValue.includes("DA101")){
-                        clearInterval(Get);
-                        let GetClientInterval = setInterval(() => {
-                            this.setState({JSScriptState:"window.ReactNativeWebView.postMessage(document.getElementById('txtSAPClient').value);"}, () => {
-                                if(this.props.Client === null || this.props.Client === ''){
-                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                }
-                                else{
-                                    clearInterval(GetClientInterval);
-                                    this.props.SelectMenuType("CREATESAPID");
-                                    this.setState({loading:false});
-                                    this.props.ChangeLink("https://es.cp.co.id/edco.php?ecsno="+value);
-                                    this.setState({WebViewMode:true}, () => {
-                                        this.setState({JSScriptState:JSScriptConstValue});
-                                        Animated.timing(this.state.WebViewSize,{
-                                            toValue:2,
-                                            duration:500
-                                        }).start();
-                                        Animated.timing(this.state.CardSize,{
-                                            toValue:0,
-                                            duration:500
-                                        }).start();
-                                    })
-                                }
-                            })
-                        }, 500)
-                    }
-                    else{
-                        clearInterval(Get);
-                        let ClearAllProps = setInterval(() => {
-                            if(this.props.Request !== '' || this.props.Client != '' || this.props.SAPID !== '' || this.props.ResetState !== '' || this.props.RequestType !== '' || this.props.Link !== ''){
-                                this.props.ChangeRequestType('');
-                                this.props.ChangeResetState('');
-                                this.props.ChangeSAPID('');
-                                this.props.ChangeClient('');
-                                this.props.MessageSend('');
-                                this.props.ChangeLink('');
-                            }
-                            else{
-                                clearInterval(ClearAllProps)
-                                this.setState({loading:false, DoneRequestButtonVisible:false});
-                                Toast.show({
-                                    text:'Request belum didukung / crawling tidak sempurna',
-                                    buttonText:'Okay',
-                                    type:'warning',
-                                    duration:3000
-                                })
-                            }
-                        }, 500)
-                    }
-                }
-                this.props.MessageSend(request)
-            }, 500)
-        });
-    }
-
-    InjectAutoFill = () => {
-        if(this.props.RequestType === 'UNLOCK' && this.props.DoneState === true){
-            let DoneStateMustFalse =  setInterval(() => {
-                if(this.props.DoneState === true){
-                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock';")
-                    this.props.ChangeDoneState(false);
-                    this.setState({DoneRequestButtonDisabled:false, LinkNow:''});
-                }
-                else{
-                    clearInterval(DoneStateMustFalse);
-                }
-            }, 500)
         }
-        else if(this.props.RequestType === 'UNLOCKRESET' && this.props.DoneState === true){
-            let DoneStateMustFalse =  setInterval(() => {
-                if(this.props.DoneState === true){
-                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial';")
-                    this.props.ChangeDoneState(false);
-                    this.setState({DoneRequestButtonDisabled:false, LinkNow:''});
-                }
-                else{
-                    clearInterval(DoneStateMustFalse);
-                }
-            }, 500)
-        }
-        else if(this.props.RequestType === 'EXTEND' && this.props.DoneState === true){
-            let DoneStateMustFalse =  setInterval(() => {
-                if(this.props.DoneState === true){
-                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, extend';")
-                    this.props.ChangeDoneState(false);
-                    this.setState({DoneRequestButtonDisabled:false, LinkNow:''});
-                }
-                else{
-                    clearInterval(DoneStateMustFalse);
-                }
-            }, 500)
-        }
-        else if(this.props.RequestType === 'ASSIGNROLE' && this.props.DoneState === true){
-            let DoneStateMustFalse =  setInterval(() => {
-                if(this.props.DoneState === true || this.props.Valid !== '' || this.props.RoleName !== ''){
-                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, assign role : "+this.props.RoleName+" "+this.props.Valid+"';")
-                    this.props.ChangeDoneState(false);
-                    this.props.ChangeValid('');
-                    this.props.ChangeRoleName('');
-                    this.setState({DoneRequestButtonDisabled:false, LinkNow:''});
-                }
-                else{
-                    clearInterval(DoneStateMustFalse);
-                }
-            }, 500)
+        else if(this.state.MenuMode === true){
+            this.CloseMenu()
         }
         else{
-            if(this.state.CardClicked === true){
-                let CardClickValueMustNotNull = setInterval(()=>{
-                    if(this.state.CardClickValue === '' || this.state.CardClickValue === null || this.state.CardClickRequest === '' || this.state.CardClickRequest === null){
-                    }
-                    else{
-                        clearInterval(CardClickValueMustNotNull);
-                        this.CardClick(this.state.CardClickValue, this.state.CardClickRequest)
-                    }
-                },500)
-            }
-            else{
-                this.setState({refreshing:false, loading:false, JSScriptState:"window.ReactNativeWebView.postMessage(window.location.href)"}, ()=>{
-                    setTimeout(() => {
-                        if(this.state.LinkNow === 'https://es.cp.co.id/mybox.php'){
-                            this.setState({JSScriptState:JSScriptConstValue, LoadDone:true})
-                        }
-                        else{
-                            this.webview.injectJavaScript("document.getElementById('email_txt').value = '"+this.state.AppUsername+"';")
-                            this.webview.injectJavaScript("document.getElementById('pass_txt').value = '"+this.state.EsPassword+"';")
-                            this.webview.injectJavaScript("document.getElementById('btnLogin').click();")
-                            this.setState({JSScriptState:JSScriptConstValue})
-                        }
-                    },500)
-                })
-            }
-            
-            let DoneStateMustFalse =  setInterval(() => {
-                if(this.props.DoneState === true){
-                    this.props.ChangeDoneState(false);
-                    this.setState({DoneRequestButtonDisabled:true});
-                }
-                else{
-                    this.setState({DoneRequestButtonDisabled:true});
-                    clearInterval(DoneStateMustFalse);
-                }
-            }, 500)
+            Alert.alert(
+                'Exit App Confirmation',
+                'Are you sure want to exit app??',
+                [
+                    {text:'OK', onPress:() => BackHandler.exitApp()},
+                    {text:'Cancel', onPress:() => console.log('cancel')}
+                ]
+            )
         }
-    }
-
-    componentDidUpdate(PrevProps){
-        if(PrevProps.Link === this.props.Link){
-        }
-        else{
-            if(this.props.Link === '' || this.props.Link === null){
-                ;
-                
-            }
-            else{
-                this.setState({WebLink:this.props.Link})
-            }
-        }
+        return true;
     }
 
     componentDidMount(){
+        this.GetKey();
         BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
-        this.GetKey()
     }
 
     componentWillUnmount(){
         BackHandler.removeEventListener('hardwareBackPress', this.HandleBackButton);
     }
 
-    HandleBackButton = () => {
-        Alert.alert(
-            'Exit App Confirmation',
-            'Are you sure want to exit app??',
-            [
-                {text:'OK', onPress:() => BackHandler.exitApp()},
-                {text:'Cancel', onPress:() => console.log('cancel')}
-            ]
-        )
-        return true;
-    }
-
-    ESDoneButton = () => {
-        this.webview.injectJavaScript("document.getElementById('Done').click();");
-        this.setState({DoneRequestButtonDisabled:true, DoneRequestButtonVisible:false}, () => {
-            //this.webview.injectJavaScript("location.replace('https://es.cp.co.id/mybox.php')");
-        })
+    BlurChild(){
+        return(
+            <View style={{right:0, left:0, top:0, bottom:0, zIndex:4}}>
+                <View style={{height:width/1.1, width:width/1.2, backgroundColor:'transparent'}}>
+                    <View style={{flex:1, backgroundColor:'transparent', flexDirection:'row'}}>
+                        <View onLayout={(event)=>this.GetMenuSize(event.nativeEvent.layout.width)} style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.MenuClickControler('1')} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="unlock" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Unlock SAP ID</Text>
+                        </View>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.MenuClickControler('2')} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="address-book" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Register SAP ID</Text>
+                        </View>
+                    </View>
+                    <View style={{flex:1, backgroundColor:'transparent', flexDirection:'row'}}>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.MenuClickControler('3')} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="user-plus" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Create SAP ID</Text>
+                        </View>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.MenuClickControler('4')} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="gears" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Assign SAP Role</Text>
+                        </View>
+                    </View>
+                    <View style={{flex:1, backgroundColor:'transparent', flexDirection:'row'}}>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.Logout()} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="power-off" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Logout</Text>
+                        </View>
+                    </View>
+                    {
+                        /* 
+                    <View style={{flex:1, backgroundColor:'transparent', flexDirection:'row'}}>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.MenuClickControler('5')} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="truck" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Transport</Text>
+                        </View>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.Logout()} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="power-off" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Logout</Text>
+                        </View>
+                    </View>
+                        */
+                    }
+                   
+                </View>
+            </View>
+        )  
     }
 
     render(){
-        let JSScript = this.state.JSScriptState;
-        const screen =() =>{
-            switch(this.props.ScreenType){
-                case 'HOME' : 
-                    return (
-                        <View style={styles.Container}>
-                            <Animated.View style={{flex:this.state.WebViewSize}}>
-                                <WebView 
-                                ref={c => this.webview = c}
-                                source={{uri:this.state.WebLink}}
-                                injectedJavaScript={JSScript}
-                                onMessage={(event) => {this.GetHTML(event.nativeEvent.data, this.state.JSScriptState)}}
-                                onLoad={() => {this.InjectAutoFill()}}
-                                />
-                                {
-                                    this.state.DoneRequestButtonVisible?
-                                    <Button  disabled={this.state.DoneRequestButtonDisabled} onPress={()=>{this.ESDoneButton()}}>
-                                        <Text>Done Request</Text>
-                                    </Button>
-                                    :
-                                    false
-                                }
-                            </Animated.View>
-
-                            <Animated.View style={{flex:this.state.CardSize}}>
-                                <Content padder refreshControl={
-                                    <RefreshControl 
-                                        refreshing={this.state.refreshing}
-                                        onRefresh={this.RefreshRequest}
-                                    />
-                                }>
-                                            
-                                        
-                                    
-                                    {
-                                        this.state.ListKosong === true && this.state.loading === false && this.state.refreshing === false ?
-                                        <Text>There is no request available</Text>
-                                        :
-                                        (
-                                            this.state.ListKosong === true && this.state.loading === true && this.state.refreshing === true ?
-                                            <Spinner color='red' /> :
-                                            this.state.RequestNumber.map((HTMLElement1) => {
-                                                if(typeof(HTMLElement1['childNodes'][0]['childNodes']) !== "undefined")
-                                                {
-                                                    return(
-                                                        <Text>Assigned, Not Accepted</Text>
-                                                    )
-                                                }
-                                                else{
-                                                    return(
-                                                        <Card>
-                                                            <CardItem button onPress={() => this.CardClickStatus(HTMLElement1['childNodes'][3]['childNodes'][0]['rawText'], HTMLElement1['childNodes'][13]['childNodes'][0]['rawText'])} header bordered>
-                                                                <Text>Ticket : </Text>
-                                                                <Text>{HTMLElement1['childNodes'][3]['childNodes'][0]['rawText']}</Text>
-                                                            </CardItem>
-                                                            <CardItem bordered>
-                                                                <Text>Requester : </Text>
-                                                                <Text>{HTMLElement1['childNodes'][9]['childNodes'][0]['rawText']}</Text>
-                                                            </CardItem>
-                                                            <CardItem bordered>
-                                                                <Text>Date : </Text>
-                                                                <Text>{HTMLElement1['childNodes'][5]['childNodes'][0]['rawText']}</Text>
-                                                            </CardItem>
-                                                            <CardItem bordered>
-                                                                <Text accessible={true} selectable={true}>{HTMLElement1['childNodes'][13]['childNodes'][0]['rawText']}</Text>
-                                                            </CardItem>
-                                                            <CardItem footer bordered>
-                                                                <Text>Ref Ticket : </Text>
-                                                                <Text>{HTMLElement1['childNodes'][17]['childNodes'][0]['rawText']}</Text>
-                                                            </CardItem>
-                                                        </Card>
-                                                );}
-                                            })
-                                        )
-                                        
-                                    }
-                                <Button onPress={() => {this.RefreshRequest()}}>
-                                    <Text>Refresh Request</Text>
-                                </Button>
-                                </Content>
-                            </Animated.View>
-                        </View>
-                    );
-                case 'UNLOCKSAPID' : 
-                    return (
-                        <UnlockSAPID />
-                    );
-                case 'REGISTERSAPID' :
-                    return(
-                        <RegisterSAPID />
-                    );
-                case 'ASSIGNSAPROLE' :
-                    return(
-                        <AssignSAPRole />
-                    );
-                case 'CREATESAPID' :
-                    return(
-                        <CreateSAPID />
-                    );
-            }
-        }
-
         return(
             <Root>
-                <Drawer ref={(ref) => { this.drawer = ref; }} content={<SideBar navigator={this.navigator} CloseDrawer={this.CloseDrawer} />} onClose={() => this.CloseDrawer()}>
-                    <Container>
-                        <Header>
-                            <Left>
-                                <Button transparent onPress={() => this.OpenDrawer()}>
-                                    <Icon name='menu' />
-                                </Button>
-                            </Left>
-                            <Body>
-                                <View style={{flexDirection:'row'}}>
-                                    {
-                                        this.props.ScreenType === 'HOME' ?
-                                        <Button onPress={()=>this.OnChangeSwitch()} color='#00f7ff' rounded disabled={false}>
-                                            <Text>Change View</Text>
-                                        </Button>
-                                        :
-                                        <Button rounded disabled={true}>
-                                            <Text>Change View</Text>
-                                        </Button>
+                <View style={{flex:1}}>
+                    <StatusBar backgroundColor='grey' barStyle='light-content' />
+                    <ImageBackground source={require("./src/img/BannerBackground.jpg")} style={{flex:1, justifyContent:'center', alignItems:'center'}}>
+                        <TouchableHighlight onPress={()=>this.OpenMenu()} style={{position:'absolute', width:width/6, height:width/6, alignItems:'center', justifyContent:'center', transform:[{translateX:-width/2.5},{translateY:-height/8.5}] }} >
+                            <Icon type='FontAwesome' name='align-justify' />
+                        </TouchableHighlight>
+                        <TouchableHighlight>
+                            <ImageBackground source={require('./src/img/Profile.jpg')} style={{width:width/4, height:width/4, borderRadius:100}} imageStyle={{borderRadius:100}}>
+                            
+                            </ImageBackground>
+                        </TouchableHighlight>
+                        <Text style={{marginTop:25, fontSize:24, fontWeight:'bold'}}>WELCOME</Text>
+                        <Text>{this.props.AppUser}</Text>
+                    </ImageBackground>
+                    <View style={{flex:1.5}}>
+                        <WebView ref={c => this.webview = c} source={{uri:'https://es.cp.co.id/mybox.php'}} 
+                            injectedJavaScript={JSSCript}
+                            onMessage={this.GetHTML}
+                            onLoadEnd={() => this.AutoLogin()}
+                        />
+                    </View>
+                    <View style={{flex:0.5}}>
+
+                    </View>
+                    <Animated.View onLayout={(e) => this.GetCardSize(e.nativeEvent.layout.width, e.nativeEvent.layout.height)} style={{backgroundColor:'#dedede', position:'absolute', height:height/1.25, width:width, alignItems:'center', transform:[{translateY:this.state.CardContainer}] }}>
+                        <ScrollView style={{width:this.state.CardWidth - 20}} contentContainerStyle={{flexGrow:1, alignItems:'center'}}>
+                            {
+                                this.state.ReqContainer.map((value, i) => {
+                                    try{
+                                        return(
+                                            <TouchableWithoutFeedback key={i}  onPress={()=>this.RequestCardClicked(value['childNodes'][3]['childNodes'][0]['rawText'], value['childNodes'][13]['childNodes'][0]['rawText'])}>
+                                                <View style={{width:this.state.CardWidth - 40, elevation:10, backgroundColor:'white', marginBottom:15, marginTop:15, borderRadius:15}}>
+                                                        <Text style={{marginLeft:15, marginTop:15, marginRight:15}}>{value['childNodes'][3]['childNodes'][0]['rawText']}</Text>
+                                                        <Text style={{marginLeft:15, marginBottom:15, marginTop:15, marginRight:15}}>Requester : {value['childNodes'][9]['childNodes'][0]['rawText']}</Text>
+                                                        <Text style={{marginLeft:15, marginBottom:15, marginTop:15, marginRight:15}}>Date : {value['childNodes'][5]['childNodes'][0]['rawText']}</Text>
+                                                        <Text style={{marginLeft:15, marginBottom:15, marginRight:15}} accessible={true} selectable={true}>{value['childNodes'][13]['childNodes'][0]['rawText']}</Text>
+                                                
+                                                </View>
+                                            </TouchableWithoutFeedback>
+                                        )
                                     }
-                                    
-                                </View>
-                            </Body>
-                        </Header>
-                        {screen()}
-                        {this.state.loading === true || this.state.refreshing === true ?
-                        <View style={styles.SpinnerOverlay}>
-                            <Spinner color='blue' />
-                        </View>
-                        :
+                                    catch(e){
+                                        console.log(value)
+                                    }
+                                })
+                            }
+                            <Text>E-Basis</Text>
+                            {
+                                this.state.EbasisContainer.map((value,i) => {
+                                    try{
+                                        if(value['childNodes'][3] === undefined){
+                                            return(
+                                                <View></View>
+                                            )
+                                        }
+                                        else{
+                                            return(
+                                                <TouchableHighlight onPress={() => this.BasisRequestCardClick(value['childNodes'][3]['childNodes'][0]['rawText'])}>
+                                                    <View key={i} style={{width:this.state.CardWidth - 40, elevation:10, backgroundColor:'#e6e6e6', marginBottom:15, marginTop:15, borderRadius:15}}>
+                                                        <Text style={{marginLeft:15, marginTop:15, marginRight:15}}>{value['childNodes'][3]['childNodes'][0]['rawText']}</Text>
+                                                        <Text style={{marginLeft:15, marginBottom:15, marginTop:15, marginRight:15}}>Requester : {value['childNodes'][7]['childNodes'][0]['rawText']}</Text>
+                                                        <Text style={{marginLeft:15, marginBottom:15, marginTop:15, marginRight:15}}>Date : {value['childNodes'][5]['childNodes'][0]['rawText']}</Text>
+                                                        <Text style={{marginLeft:15, marginBottom:15, marginTop:15, marginRight:15}}>Client : {value['childNodes'][11]['childNodes'][0]['rawText']}</Text>
+                                                        {
+                                                            value['childNodes'][13]['childNodes'].length === 0 ?
+                                                            <Text style={{marginLeft:15, marginBottom:15, marginRight:15, color:'red'}} accessible={true} selectable={true}>{"<NO DESCRIPTION>"}</Text>
+                                                            :
+                                                            <Text style={{marginLeft:15, marginBottom:15, marginRight:15}} accessible={true} selectable={true}>{value['childNodes'][13]['childNodes'][0]['rawText']}</Text>
+                                                        }
+                                                        
+                                                    </View>
+                                                </TouchableHighlight>
+                                                
+                                            )
+                                        }
+                                    }
+                                    catch(e){
+                                        console.log(value)
+                                    }
+                                })
+                            }
+                        </ScrollView>
+                    </Animated.View>
+                    <Animated.View style={{width:width/5.5, height:width/5.5, position:'absolute', borderWidth:20, borderColor:'rgba(0,0,0,0.2)', alignItems: 'center', justifyContent: 'center', borderRadius:100, transform:[{translateX:width/2.3},{translateY:height/1.2}]}}>
+                        <TouchableHighlight  style={{width:width/6, height:width/6, backgroundColor:'white', justifyContent:'center', alignItems:'center', position:'absolute', borderRadius:200, }} onPress={()=>this.GetESHTMLMenu()} disabled={this.state.MenuShowDisabled}>
+                            <Icon type='FontAwesome' name={IconType}/>
+                        </TouchableHighlight>
+                    </Animated.View>
+                    
+                    <BlurOverlay radus={14} downsampling={1} brightness={-200} onPress={()=> {this.CloseMenu()}} blurStyle="dark" children={this.BlurChild()} customStyles={{alignItems: 'center', justifyContent: 'center'}} />
+                </View>
+                {
+                    this.state.LoadingRequest ?
+                        <ImageBackground source={require('./src/img/loading.gif')} style={{position:'absolute', height:height, width:width, backgroundColor:'rgba(0,0,0,0.5)', alignItems:'center', justifyContent:'center'}}>
+                            
+                        </ImageBackground>
+                    :
                         null
-                        }
-                    </Container>
-                </Drawer>
+                }
             </Root>
         )
     }
 }
-
-const styles = StyleSheet.create({
-    Container:{
-        flex:2
-    },
-    SpinnerOverlay:{
-        position:'absolute',
-        left:0,
-        right:0,
-        top:0,
-        bottom:0,
-        alignItems:'center',
-        justifyContent:'center',
-        backgroundColor:'#9C9C9C88',
-        
-    },
-    WebViewContainer:{
-        flex:0.5
-    },
-    CardContainer:{
-        flex:0.5
-    }
-})
 
 const MapStateToProps = (state) => {
     return{
@@ -878,7 +689,8 @@ const MapStateToProps = (state) => {
         Link:state.reducer.Link,
         DoneState:state.reducer.DoneState,
         Valid:state.reducer.Valid,
-        RoleName:state.reducer.RoleName
+        RoleName:state.reducer.RoleName,
+        AppUser:state.reducer.AppUser
     }
 }
 
