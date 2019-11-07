@@ -702,7 +702,20 @@ class TransportRoleClass extends React.Component{
                                     </View>
                                     
                                     <View style={{flex:1}}>
-                                        <TouchableHighlight onPress={() => this.StartSraping()} style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10}}>
+                                        <TouchableHighlight onPress={() => 
+                                            {
+                                                this.state.TargetClient.map((value, index) => {
+                                                    this[`TargetClients${index}`].setNativeProps({style:{color:'black'}})
+                                                })
+                                                this.state.CR.map((value, index) => {
+                                                    this[`CR${index}`].setNativeProps({style:{color:'black'}})
+                                                })
+                                                this.setState({ClientStatus:[], CRFinalStatus:[], CRFinalLog:[]},() => {
+                                                    CRFinalStatusMark = [];
+                                                    this.StartSraping()
+                                                })
+                                            }} 
+                                            style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10}}>
                                             <Text>MANUAL SCRAPPING</Text>
                                         </TouchableHighlight>
                                     </View>
