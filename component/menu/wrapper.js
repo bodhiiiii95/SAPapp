@@ -7,8 +7,8 @@ import AsyncStorage from '@react-native-community/async-storage';
 import SideBar from './drawer.js';
 import {connect} from 'react-redux';
 import UnlockSAPID from './basis/unlocksapid.js';
-
 import AssignSAPRole from './basis/assignsaprole.js';
+import ImagePicker from 'react-native-image-picker';
 
 import BlurOverlay,{closeOverlay,openOverlay} from 'react-native-blur-overlay';
 
@@ -56,6 +56,8 @@ class MenuApp extends React.Component{
             LoadingRequest:false,
             MenuMode:false,
             MenuShowDisabled:false,
+            ProfileImageUri:'',
+
         }
     }
 
@@ -462,6 +464,7 @@ class MenuApp extends React.Component{
     async DeleteKey() {
         try{
             await AsyncStorage.removeItem('user');
+            await AsyncStorage.removeItem('ProfileImage')
             this.webview.injectJavaScript("window.location.href='https://es.cp.co.id/logout.php'")
         }
         catch(error){
@@ -497,8 +500,50 @@ class MenuApp extends React.Component{
         return true;
     }
 
+    ChangeProfileImage = async () => {
+        const options = {};
+        ImagePicker.showImagePicker(options, async (response) => {
+
+            if(response.didCancel){
+                console.log("user cancel image picker")
+            }
+            else if(response.error){
+                console.log(response.error)
+            }
+            else if(response.customButton){
+                console.log(response.customButton)
+            }
+            else{
+                const source = 'file://'+response.path
+                //Saving profile pic to devices
+                await AsyncStorage.setItem('ProfileImage', source)
+                this.GetProfileImage();
+            }
+        })
+    }
+
+    GetProfileImage = async () => {
+        try{
+            var GetProfileImagePath = AsyncStorage.getItem('ProfileImage', (err,result) => {
+                if(result){
+                    this.setState({ProfileImageUri:result})
+                }
+                else{
+                    this.setState({ProfileImageUri:'none'})
+                }
+            })
+        }
+        catch(e){
+
+        }
+    }
+
+    DeleteProfileImage = () => {
+    }
+
     componentDidMount(){
         this.GetKey();
+        this.GetProfileImage();
         BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
     }
 
@@ -570,6 +615,28 @@ class MenuApp extends React.Component{
         )  
     }
 
+    RenderProfilePic = () => {
+        if(this.state.ProfileImageUri === ''){
+            return(
+                <Image source={require('./src/img/ProfileImageLoading.gif')} />
+            )
+        }
+        else if(this.state.ProfileImageUri === 'none'){
+            return(
+                <ImageBackground source={require('./src/img/Profile.jpg')} style={{width:width/4, height:width/4, borderRadius:100}} imageStyle={{borderRadius:100}}>
+                            
+                </ImageBackground>
+            )
+        }
+        else{
+            return(
+                <ImageBackground source={{uri:this.state.ProfileImageUri}} style={{width:width/4, height:width/4, borderRadius:100}} imageStyle={{borderRadius:100}}>
+                            
+                </ImageBackground>
+            )
+        }
+    }
+
     render(){
         return(
             <Root>
@@ -579,11 +646,9 @@ class MenuApp extends React.Component{
                         <TouchableHighlight onPress={()=>this.OpenMenu()} style={{position:'absolute', width:width/6, height:width/6, alignItems:'center', justifyContent:'center', transform:[{translateX:-width/2.5},{translateY:-height/8.5}] }} >
                             <Icon type='FontAwesome' name='align-justify' />
                         </TouchableHighlight>
-                        <TouchableHighlight>
-                            <ImageBackground source={require('./src/img/Profile.jpg')} style={{width:width/4, height:width/4, borderRadius:100}} imageStyle={{borderRadius:100}}>
-                            
-                            </ImageBackground>
-                        </TouchableHighlight>
+                        <TouchableWithoutFeedback onPress={() => this.ChangeProfileImage()}>
+                            {this.RenderProfilePic()}
+                        </TouchableWithoutFeedback>
                         <Text style={{marginTop:25, fontSize:24, fontWeight:'bold'}}>WELCOME</Text>
                         <Text>{this.props.AppUser}</Text>
                     </ImageBackground>

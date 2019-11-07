@@ -602,13 +602,6 @@ class TransportRoleClass extends React.Component{
         }
     }
 
-    /*TransportRoles = () => {
-        var FinishedArray = [];
-        this.state.TargetClient.forEach(async (Client, index) => {
-            await this.TransportRolesFetch(Client, index)
-        })
-    }*/
-
     ConfirmHandleBackButton = () => {
         var RequestMustNull = setInterval(() => {
             if(this.props.RequestType !== ''){
