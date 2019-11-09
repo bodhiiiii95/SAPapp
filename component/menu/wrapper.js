@@ -417,7 +417,7 @@ class MenuApp extends React.Component{
                         this.props.navigation.navigate('AssignSAPRole');
                     }
                     else if(event === '5'){
-                        this.props.navigation.navigate('TransportRole');
+                        this.props.navigation.navigate('Monitoring');
                     }
                 }
             },500)
@@ -584,6 +584,12 @@ class MenuApp extends React.Component{
                         </View>
                     </View>
                     <View style={{flex:1, backgroundColor:'transparent', flexDirection:'row'}}>
+                        <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
+                            <TouchableHighlight onPress={() => this.MenuClickControler('5')} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
+                                <Icon type='FontAwesome' name="tv" style={{color:'white'}} />
+                            </TouchableHighlight>
+                            <Text style={{color:'white'}} >Server Monitoring</Text>
+                        </View>
                         <View style={{flex:1, backgroundColor:'transparent', justifyContent:'center', alignItems:'center'}}>
                             <TouchableHighlight onPress={() => this.Logout()} style={{borderRadius:100, borderColor:'white', borderWidth:2, width:this.state.MenuSize/2, height:this.state.MenuSize/2, justifyContent:'center', alignItems:'center'}}>
                                 <Icon type='FontAwesome' name="power-off" style={{color:'white'}} />

@@ -8,6 +8,7 @@ import AssignSAPRole from './menu/basis/assignsaprole'
 import RegisterSAPID from './menu/basis/registersapid.js';
 import CreateSAPID from './menu/basis/createsapid.js';
 import TransportRole from './menu/basis/transportRole';
+import Monitoring from './menu/sysadmin/monitoring'
 import {createStore, combineReducers, applyMiddleware} from 'redux'
 import { Provider } from 'react-redux'
 import { zoomIn } from 'react-navigation-transitions';
@@ -92,6 +93,17 @@ class TransportRoleScreen extends React.Component{
     }
 }
 
+class MonitoringScreen extends React.Component{
+    static navigationOptions = {
+        title: 'Monitoring',
+        header: null
+    };
+    render(){
+        return (<Monitoring />);
+    }
+}
+
+
 const RootStack = createStackNavigator({
     Splash : SplashScreen,
     Login : LoginScreen,
@@ -101,6 +113,7 @@ const RootStack = createStackNavigator({
     RegisterSAPID : RegisterSapIDScreen,
     CreateSAPID : CreateSAPIDScreen,
     TransportRole:TransportRoleScreen,
+    Monitoring:MonitoringScreen,
 },
 {
     initialRouteName: 'Login',
