@@ -51,6 +51,7 @@
 		A0C4582D490540B894C0939D /* Zocial.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FA56C513B8E24FB1A35AB454 /* Zocial.ttf */; };
 		98D71B384A50483F9E3D1023 /* libRNPinch.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED25F4CFB7EE4C5887A71667 /* libRNPinch.a */; };
 		CC600BC4F5574037ACD78ECA /* Fontisto.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7A3252124FA04C0191E97363 /* Fontisto.ttf */; };
+		36FBF8A64D5242FDAF8A84C0 /* libRNBackgroundJob.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CCAE7A17D5CC4B019BF4FBF0 /* libRNBackgroundJob.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -123,6 +124,8 @@
 		E480B0CACD074698B8351546 /* RNPinch.xcodeproj */ = {isa = PBXFileReference; name = "RNPinch.xcodeproj"; path = "../node_modules/react-native-pinch/RNPinch.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
 		ED25F4CFB7EE4C5887A71667 /* libRNPinch.a */ = {isa = PBXFileReference; name = "libRNPinch.a"; path = "libRNPinch.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
 		7A3252124FA04C0191E97363 /* Fontisto.ttf */ = {isa = PBXFileReference; name = "Fontisto.ttf"; path = "../node_modules/native-base/Fonts/Fontisto.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		54E91F4D8EC04090A44CC236 /* RNBackgroundJob.xcodeproj */ = {isa = PBXFileReference; name = "RNBackgroundJob.xcodeproj"; path = "../node_modules/react-native-background-job/ios/RNBackgroundJob.xcodeproj"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = wrapper.pb-project; explicitFileType = undefined; includeInIndex = 0; };
+		CCAE7A17D5CC4B019BF4FBF0 /* libRNBackgroundJob.a */ = {isa = PBXFileReference; name = "libRNBackgroundJob.a"; path = "libRNBackgroundJob.a"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = archive.ar; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +141,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				98D71B384A50483F9E3D1023 /* libRNPinch.a in Frameworks */,
+				36FBF8A64D5242FDAF8A84C0 /* libRNBackgroundJob.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +206,7 @@
 			isa = PBXGroup;
 			children = (
 				E480B0CACD074698B8351546 /* RNPinch.xcodeproj */,
+				54E91F4D8EC04090A44CC236 /* RNBackgroundJob.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -620,10 +625,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Debug;
@@ -647,10 +654,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Release;
@@ -674,6 +683,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Debug;
@@ -696,6 +706,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Release;
@@ -727,10 +738,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Debug;
@@ -762,10 +775,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Release;
@@ -796,10 +811,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Debug;
@@ -830,10 +847,12 @@
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/$(TARGET_NAME)\"",
+					"\"$(SRCROOT)/$(TARGET_NAME)\"",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)\..\node_modules\react-native-pinch\RNPinch",
+					"$(SRCROOT)/..\node_modules\react-native-background-job\ios",
 				);
 			};
 			name = Release;

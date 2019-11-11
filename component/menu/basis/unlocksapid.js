@@ -169,7 +169,8 @@ class UnlockSAPID extends React.Component{
                     username:this.state.SAPUsername.replace(/\s+/g, ''),
                     SAPclient:this.state.SelectedClient,
                     webUsername:this.state.AppUsername,
-                    resetPasswordFlag:this.state.ResetPasswordFlag
+                    resetPasswordFlag:this.state.ResetPasswordFlag,
+                    esTicket:this.props.Link
                 }),
             })
             .then((response) => response.json())

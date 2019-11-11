@@ -9,6 +9,7 @@ import {connect} from 'react-redux';
 import UnlockSAPID from './basis/unlocksapid.js';
 import AssignSAPRole from './basis/assignsaprole.js';
 import ImagePicker from 'react-native-image-picker';
+import Backgroundjob from 'react-native-background-job';
 
 import BlurOverlay,{closeOverlay,openOverlay} from 'react-native-blur-overlay';
 
@@ -33,6 +34,11 @@ const PreventBack = StackActions.reset({
     index: 0,
     actions:[NavigationActions.navigate({routeName:'Login'})],
 });
+
+const BgJob = {
+    jobKey:"MyJob",
+    job:() => console.log("test")
+}
 
 class MenuApp extends React.Component{
 
@@ -71,6 +77,7 @@ class MenuApp extends React.Component{
     }
 
     GetHTML = (event) => {
+        
         this.webview.injectJavaScript(JSSCript);
         if(JSSCript === "window.ReactNativeWebView.postMessage(document.body.innerHTML);"){
             HTMLText = event.nativeEvent.data
@@ -545,6 +552,7 @@ class MenuApp extends React.Component{
         this.GetKey();
         this.GetProfileImage();
         BackHandler.addEventListener('hardwareBackPress', this.HandleBackButton);
+        Backgroundjob.register(BgJob)
     }
 
     componentWillUnmount(){

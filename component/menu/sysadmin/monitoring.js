@@ -143,7 +143,7 @@ class Monitoring extends React.Component{
                         <View style={{flex:1 , justifyContent:'center', alignContent:'center'}}>
                             <View style={{flex:1, justifyContent:'center', alignItems:'center'}}>
                                 <Text>Virtual Memory Usage : </Text>
-                                <Text>{this.state.VmemUsageMB}/{this.state.VmemTotal}MB</Text>
+                                <Text>{this.state.VmemUsageMB}/{this.state.VmemTotal} MB</Text>
                             </View>
                             <View style={{flex:6, justifyContent:'center', alignContent:'center'}}>
                                 <ProgressCircle style={{height:width/3}} progress={this.state.VmemUsagePercentage} progressColor={'rgb(134,65,244)'}/>
