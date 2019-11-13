@@ -322,14 +322,24 @@ class UnlockSAPID extends React.Component{
                     var Logs = response[i].split(",")
                     UnlockDateLog = UnlockDateLog.concat("\\n - "+ Logs[0] + " - " + Logs[1] + " - " + Logs[2])
                 }
-                this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial."+"\\n"+"HISTORICAL : " + UnlockDateLog + "';")
+                if(response.length === 1){
+                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial.';")
+                }
+                else{
+                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial."+"\\n"+"HISTORICAL : " + UnlockDateLog + "';")
+                }
             }
             else if(this.props.RequestType === 'UNLOCK'){
                 for(i = 1; i<response.length; i++){
                     var Logs = response[i].split(",")
                     UnlockDateLog = UnlockDateLog.concat("\\n - "+ Logs[0] + " - " + Logs[1] + " - " + Logs[2])
                 }
-                this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock."+"\\n"+"HISTORICAL : " + UnlockDateLog + "';")
+                if(response.length === 1){
+                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock';")
+                }
+                else{
+                    this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock."+"\\n"+"HISTORICAL : " + UnlockDateLog + "';")
+                }
             }
             else if(this.props.RequestType === 'EXTEND'){
                 this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, extend';")
