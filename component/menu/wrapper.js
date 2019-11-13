@@ -297,14 +297,13 @@ class MenuApp extends React.Component{
     }
 
     RequestCardClicked = (value, EsMessage) => {
-        console.log(ReqPackage)
         this.setState({LoadingRequest:true}, ()=> {
             let Timeout = 0;
             this.webview.injectJavaScript("window.location.replace('https://es.cp.co.id/edco.php?ecsno="+value+"')");
             JSSCript = "window.ReactNativeWebView.postMessage(JSON.stringify({'RequestType':document.getElementById('act_slc').value,'Client':document.getElementById('txtSAPClient').value, 'UnlockSAPID':document.getElementById('txtSAPID1').value,'UnlockResetVal':document.getElementById('cbReset').checked.toString(), 'ExtendSAPID':document.getElementById('txtSAPID').value}));";
             var ParaMustNotNull  = setInterval(() => {
                 if(ReqPackage.length === 0){
-                    console.log(this.props.Link)
+                   
                 }
                 else{
                     if(ReqPackage[0] === "DA105"){
@@ -407,7 +406,6 @@ class MenuApp extends React.Component{
                     this.props.ChangeResetState('');
                     this.props.MessageSend('');
                     this.props.ChangeLink('');
-                    console.log(this.props.Request)
                 }
                 else{
                     clearInterval(ClearRequestType)
@@ -657,7 +655,7 @@ class MenuApp extends React.Component{
                 <View style={{flex:1}}>
                     <StatusBar backgroundColor='grey' barStyle='light-content' />
                     <ImageBackground source={require("./src/img/BannerBackground.jpg")} style={{flex:1, justifyContent:'center', alignItems:'center'}}>
-                        <TouchableHighlight onPress={()=>this.OpenMenu()} style={{position:'absolute', width:width/6, height:width/6, alignItems:'center', justifyContent:'center', transform:[{translateX:-width/2.5},{translateY:-height/8.5}] }} >
+                        <TouchableHighlight onPress={()=> this.OpenMenu()} style={{position:'absolute', width:width/6, height:width/6, alignItems:'center', justifyContent:'center', transform:[{translateX:-width/2.5},{translateY:-height/8.5}] }} >
                             <Icon type='FontAwesome' name='align-justify' />
                         </TouchableHighlight>
                         <TouchableWithoutFeedback onPress={() => this.ChangeProfileImage()}>

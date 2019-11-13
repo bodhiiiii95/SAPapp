@@ -1,4 +1,4 @@
-import { Text, Form, Item, Label, Input, Button, Picker, CheckBox, Body, ListItem, Content, Toast, Card, CardItem} from 'native-base';
+import { Text, Form, Item, Label, Input, Button, Picker, CheckBox, Body, ListItem, Content, Toast, Card, CardItem, Root} from 'native-base';
 import React, { Component } from 'react';
 import {StyleSheet, Dimensions, AsyncStorage, Keyboard, Alert, View, BackHandler} from 'react-native'; 
 import {connect} from 'react-redux';
@@ -129,10 +129,8 @@ class UnlockSAPID extends React.Component{
                 let DoneStateMustTrue = setInterval(() => {
                     if(this.props.DoneState === false){
                         this.props.ChangeDoneState(true)
-                        console.log(this.props.DoneState)
                     }
                     else{
-                        console.log(this.props.DoneState)
                         this.setState({BackToHomeEnabled:true}, () => {
                             this.setState({Message:responseJson.message});
                             this.setState({ResetPasswordMessage:''});
@@ -296,24 +294,55 @@ class UnlockSAPID extends React.Component{
                 'Confirmation',
                 'Are you sure all of your work is done?',
                 [
-                    {text:'OK', onPress:() => this.Autofill()},
+                    {text:'OK', onPress:() => this.GetUnlockHistory()},
                     {text:'Cancel', onPress:() => console.log('cancel')}
                 ]
             )
         }
     }
 
-    Autofill = () => {
-        if(this.props.RequestType === 'UNLOCKRESET'){
-            this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial';")
-        }
-        else if(this.props.RequestType === 'UNLOCK'){
-            this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock';")
-        }
-        else if(this.props.RequestType === 'EXTEND'){
-            this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, extend';")
-        }
-        this.webview.injectJavaScript("document.getElementById('Done').click();");
+    GetUnlockHistory = () => {
+        fetch(this.props.APIIP + 'dcoappapi/SendUnlockHistories', {
+            method: 'POST',
+            headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            },
+            body:JSON.stringify({
+                username:this.state.SAPUsername
+            }),
+        })
+        .then((response) => response.json())
+        .then((responseJson) => {
+            var response = responseJson.data 
+            var UnlockDateLog = ""
+            let i;
+            if(this.props.RequestType === 'UNLOCKRESET'){
+                for(i = 1; i<response.length; i++){
+                    var Logs = response[i].split(",")
+                    UnlockDateLog = UnlockDateLog.concat("\\n - "+ Logs[0] + " - " + Logs[1] + " - " + Logs[2])
+                }
+                this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, unlock and reset password : initial."+"\\n"+"HISTORICAL : " + UnlockDateLog + "';")
+            }
+            else if(this.props.RequestType === 'UNLOCK'){
+                for(i = 1; i<response.length; i++){
+                    var Logs = response[i].split(",")
+                    UnlockDateLog = UnlockDateLog.concat("\\n - "+ Logs[0] + " - " + Logs[1] + " - " + Logs[2])
+                }
+                this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, hanya unlock."+"\\n"+"HISTORICAL : " + UnlockDateLog + "';")
+            }
+            else if(this.props.RequestType === 'EXTEND'){
+                this.webview.injectJavaScript("document.getElementById('txtSolving').value = 'Done, extend';")
+            }
+            this.webview.injectJavaScript("document.getElementById('Done').click();");
+        }).catch((error) => {
+            Toast.show({
+                text:'tidak terhubung ke jaringan / server bermasalah',
+                buttonText:'Okay',
+                type:'warning',
+                duration:3000
+            })
+        })
     }
 
     componentDidMount(){
@@ -327,7 +356,6 @@ class UnlockSAPID extends React.Component{
         }
         else{
             this.setState({UnlockDisabled:false, LockDisabled:false, ExtendDisabled:false})
-            console.log("ada perubahan message")
         }
     }
 
@@ -342,94 +370,96 @@ class UnlockSAPID extends React.Component{
 
     render(){
         return(
-            <View style={{flex:1}}>
-                <Content underline={false}>
-                    <Form underline={false} style={styles.container}>
-                        <Item floatingLabel>
-                            <Label>Username</Label>
-                            <Input value={this.state.SAPUsername} onChangeText={(value) => this.setState({SAPUsername:value})} />
-                        </Item>
-                        <Item style={{borderColor: '#ffffff'}}>
-                            <Text>Client : </Text>
-                            <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
-                                {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
-                            </Picker>
-                        </Item>
-                        {
-                            this.props.RequestType === 'UNLOCK' || this.props.RequestType === 'UNLOCKRESET' ||  this.props.RequestType === ''?
-                            <ListItem style={styles.CheckBox}>
-                                <CheckBox disabled={false} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
-                                <Body>
-                                    <Text>Reset Password</Text>
-                                </Body>
-                            </ListItem>
-                            :
-                            <ListItem style={styles.CheckBox}>
-                                <CheckBox disabled={true} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
-                                <Body>
-                                    <Text>Reset Password</Text>
-                                </Body>
-                            </ListItem>
-                        }
-                        
-                        <Item style={styles.ButtonContainer}>
-                            <Button disabled={this.state.UnlockDisabled} rounded style={styles.ButtonUnlock} onPress={()=> this.UnlockSapId()}>
-                                <Text>{this.state.ButtonUnlock}</Text>
-                            </Button>
+            <Root>
+                <View style={{flex:1}}>
+                    <Content underline={false}>
+                        <Form underline={false} style={styles.container}>
+                            <Item floatingLabel>
+                                <Label>Username</Label>
+                                <Input value={this.state.SAPUsername} onChangeText={(value) => this.setState({SAPUsername:value})} />
+                            </Item>
+                            <Item style={{borderColor: '#ffffff'}}>
+                                <Text>Client : </Text>
+                                <Picker mode="dropdown" selectedValue={this.state.SelectedClient} onValueChange={(value) => this.HandleChangeValue(value)}>
+                                    {this.state.Client.map((Client) => <Picker.Item label={Client} value={Client} />)}
+                                </Picker>
+                            </Item>
                             {
-                                this.state.LockDisabled ?
-                                <Button disabled={this.state.LockDisabled} rounded style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
-                                    <Text>Lock</Text>
-                                </Button>
+                                this.props.RequestType === 'UNLOCK' || this.props.RequestType === 'UNLOCKRESET' ||  this.props.RequestType === ''?
+                                <ListItem style={styles.CheckBox}>
+                                    <CheckBox disabled={false} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
+                                    <Body>
+                                        <Text>Reset Password</Text>
+                                    </Body>
+                                </ListItem>
                                 :
-                                <Button disabled={this.state.LockDisabled} rounded danger style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
-                                    <Text>Lock</Text>
-                                </Button>
+                                <ListItem style={styles.CheckBox}>
+                                    <CheckBox disabled={true} checked={this.state.ResetPasswordFlag} onPress={() => this.HandleCheckBox()}/>    
+                                    <Body>
+                                        <Text>Reset Password</Text>
+                                    </Body>
+                                </ListItem>
                             }
-                        </Item>
-                        <Item style={styles.ButtonContainer}>
+                            
+                            <Item style={styles.ButtonContainer}>
+                                <Button disabled={this.state.UnlockDisabled} rounded style={styles.ButtonUnlock} onPress={()=> this.UnlockSapId()}>
+                                    <Text>{this.state.ButtonUnlock}</Text>
+                                </Button>
+                                {
+                                    this.state.LockDisabled ?
+                                    <Button disabled={this.state.LockDisabled} rounded style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
+                                        <Text>Lock</Text>
+                                    </Button>
+                                    :
+                                    <Button disabled={this.state.LockDisabled} rounded danger style={styles.ButtonLock} onPress={()=> this.LockSapId()}>
+                                        <Text>Lock</Text>
+                                    </Button>
+                                }
+                            </Item>
+                            <Item style={styles.ButtonContainer}>
+                                {
+                                    this.state.ExtendDisabled ?
+                                    <Button disabled={this.state.ExtendDisabled} rounded style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
+                                        <Text>Extend SAP ID</Text>
+                                    </Button>
+                                    :
+                                    <Button disabled={this.state.ExtendDisabled} rounded success style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
+                                        <Text>Extend SAP ID</Text>
+                                    </Button>
+                                }
+                            </Item>
+                            <Item style={styles.CheckBox}>
+                                <Text>{this.state.Message + ' ' + this.state.ResetPasswordMessage}</Text>
+                            </Item>
+                        </Form>
+                        <Card>
                             {
-                                this.state.ExtendDisabled ?
-                                <Button disabled={this.state.ExtendDisabled} rounded style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
-                                    <Text>Extend SAP ID</Text>
-                                </Button>
+                                this.props.Request === '' || this.props.RequestType === '' ?
+                                <CardItem bordered header>  
+                                    <Text>This action is not affiliate to request from ES</Text>
+                                </CardItem>
                                 :
-                                <Button disabled={this.state.ExtendDisabled} rounded success style={styles.ButtonExtend} onPress={()=> this.ExtendSapId()}>
-                                    <Text>Extend SAP ID</Text>
-                                </Button>
+                                <CardItem bordered button onPress={() => this.AutofillAlert()} header>  
+                                    <Text>This action is affiliate to request : {this.props.Link} (Click here if you have done your work)</Text>
+                                </CardItem>
                             }
-                        </Item>
-                        <Item style={styles.CheckBox}>
-                            <Text>{this.state.Message + ' ' + this.state.ResetPasswordMessage}</Text>
-                        </Item>
-                    </Form>
-                    <Card>
-                        {
-                            this.props.Request === '' || this.props.RequestType === '' ?
-                            <CardItem bordered header>  
-                                <Text>This action is not affiliate to request from ES</Text>
+                            
+                            <CardItem bordered>
+                                <Body>
+                                    <Text accessible={true} selectable={true}>{this.props.Request  + " client : " + this.props.Client}</Text>
+                                    
+                                </Body>
                             </CardItem>
-                            :
-                            <CardItem bordered button onPress={() => this.AutofillAlert()} header>  
-                                <Text>This action is affiliate to request : {this.props.Link} (Click here if you have done your work)</Text>
-                            </CardItem>
-                        }
-                        
-                        <CardItem bordered>
-                            <Body>
-                                <Text accessible={true} selectable={true}>{this.props.Request  + " client : " + this.props.Client}</Text>
-                                
-                            </Body>
-                        </CardItem>
-                    </Card>
-                </Content>
-                {
-                    this.props.Request === '' || this.props.RequestType === '' ?
-                    null
-                    :
-                    <WebView ref={c => this.webview = c} source={{uri:'https://es.cp.co.id/edco.php?ecsno=' + this.props.Link}} />
-                }
-            </View>
+                        </Card>
+                    </Content>
+                    {
+                        this.props.Request === '' || this.props.RequestType === '' ?
+                        null
+                        :
+                        <WebView ref={c => this.webview = c} source={{uri:'https://es.cp.co.id/edco.php?ecsno=' + this.props.Link}} />
+                    }
+                </View>
+            </Root>
         )
     }
 }
