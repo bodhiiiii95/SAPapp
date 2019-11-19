@@ -43,6 +43,8 @@ class TransportRoleClass extends React.Component{
             CRTempStatus:[],
             CRFinalStatus:[],
             CRFinalLog:[],
+            DoneFlag:0, // 0 = no action, 1 = QA Only, 2 = PROD Only, 3 = QA&PROD
+            AllDone:false,
         }
     }
 
@@ -99,7 +101,7 @@ class TransportRoleClass extends React.Component{
                 }
                 else if(event.nativeEvent.data === 'true'){
                     //one step
-                    this.setState({OneStep:true}, () => {
+                    this.setState({OneStep:true, DoneFlag:3}, () => {
                         JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
@@ -115,7 +117,7 @@ class TransportRoleClass extends React.Component{
                 }
                 else if(event.nativeEvent.data === 'true'){
                     //one step
-                    this.setState({OneStep:true}, () => {
+                    this.setState({OneStep:true, DoneFlag:3}, () => {
                         JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
@@ -131,7 +133,7 @@ class TransportRoleClass extends React.Component{
                 }
                 else if(event.nativeEvent.data === 'true'){
                     //one step
-                    this.setState({OneStep:true}, () => {
+                    this.setState({OneStep:true, DoneFlag:3}, () => {
                         JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
@@ -147,7 +149,7 @@ class TransportRoleClass extends React.Component{
                 }
                 else if(event.nativeEvent.data === 'true'){
                     //one step
-                    this.setState({OneStep:true}, () => {
+                    this.setState({OneStep:true, DoneFlag:3}, () => {
                         JSSCript = "window.ReactNativeWebView.postMessage(document.getElementById('tab_main').innerHTML)"
                         this.webview.injectJavaScript(JSSCript)
                     })
@@ -208,7 +210,7 @@ class TransportRoleClass extends React.Component{
                             //next step
                             TargetClient = []
                             TargetClient.push("100");
-                            this.setState({TargetClient:[...TargetClient]})
+                            this.setState({TargetClient:[...TargetClient], DoneFlag:1})
                             JSSCript = ""
                             this.webview.injectJavaScript(JSSCript)
                         }
@@ -221,7 +223,7 @@ class TransportRoleClass extends React.Component{
                             //next step
                             TargetClient = []
                             TargetClient.push("160");
-                            this.setState({TargetClient:[...TargetClient]})
+                            this.setState({TargetClient:[...TargetClient], DoneFlag:1})
                             JSSCript = ""
                             this.webview.injectJavaScript(JSSCript)
                         }
@@ -234,7 +236,7 @@ class TransportRoleClass extends React.Component{
                             //next step
                             TargetClient = []
                             TargetClient.push("120");
-                            this.setState({TargetClient:[...TargetClient]})
+                            this.setState({TargetClient:[...TargetClient], DoneFlag:1})
                             JSSCript = ""
                             this.webview.injectJavaScript(JSSCript)
                         }
@@ -247,7 +249,7 @@ class TransportRoleClass extends React.Component{
                             //next step
                             TargetClient = []
                             TargetClient.push("800");
-                            this.setState({TargetClient:[...TargetClient]})
+                            this.setState({TargetClient:[...TargetClient], DoneFlag:1})
                             JSSCript = ""
                             this.webview.injectJavaScript(JSSCript)
                         }
@@ -260,7 +262,7 @@ class TransportRoleClass extends React.Component{
                             //next step
                             TargetClient = []
                             TargetClient.push("160");
-                            this.setState({TargetClient:[...TargetClient]})
+                            this.setState({TargetClient:[...TargetClient], DoneFlag:1})
                             JSSCript = ""
                             this.webview.injectJavaScript(JSSCript)
                         }
@@ -275,6 +277,7 @@ class TransportRoleClass extends React.Component{
                 TargetClient = []
                 if(ClientJSON["461"] === false && ClientJSON["462"] === false){
                     TargetClient.push("160");
+                    this.setState({DoneFlag:2})
                 }
                 else{
                     if(ClientJSON["461"] === true){
@@ -290,6 +293,7 @@ class TransportRoleClass extends React.Component{
                     else{
                         ;
                     }
+                    this.setState({DoneFlag:1})
                 }
                 JSSCript = ""
                 this.webview.injectJavaScript(JSSCript)
@@ -343,6 +347,7 @@ class TransportRoleClass extends React.Component{
                 
                 if(ClientJSON["420"] === false){
                     TargetClient.push("120");
+                    this.setState({DoneFlag:2})
                 }
                 else{
                     if(ClientJSON["420"] === true){
@@ -351,6 +356,7 @@ class TransportRoleClass extends React.Component{
                     else{
                         ;
                     }
+                    this.setState({DoneFlag:1})
                 }
                 JSSCript = ""
                 this.webview.injectJavaScript(JSSCript)
@@ -397,6 +403,7 @@ class TransportRoleClass extends React.Component{
                 TargetClient = []
                 if(ClientJSON["811"] === false && ClientJSON["812"] === false){
                     TargetClient.push("800");
+                    this.setState({DoneFlag:2})
                 }
                 else{
                     if(ClientJSON["811"] === true){
@@ -412,6 +419,7 @@ class TransportRoleClass extends React.Component{
                     else{
                         ;
                     }
+                    this.setState({DoneFlag:1})
                 }
                 JSSCript = ""
                 this.webview.injectJavaScript(JSSCript)
@@ -466,8 +474,10 @@ class TransportRoleClass extends React.Component{
 
                 if(ClientJSON["401"] === false && ClientJSON["402"] === false){
                     TargetClient.push("100");
+                    this.setState({DoneFlag:2})
                 }
                 else{
+                    this.setState({DoneFlag:1})
                     if(ClientJSON["401"] === true){
                         TargetClient.push("401")
                     }
@@ -625,7 +635,7 @@ class TransportRoleClass extends React.Component{
                 ClientIndex = 0
                 CRTransportPos = 0
                 CRFinalLog = []
-                this.setState({TransportResponse:'All Transport Done'}, () => {
+                this.setState({TransportResponse:'All Transport Done', AllDone:true}, () => {
                     ArrayClientStatus = [];
                 })
             }
@@ -642,6 +652,42 @@ class TransportRoleClass extends React.Component{
                 this.props.navigation.dispatch(BackToHome);
             }
         }, 100);
+    }
+
+    HandleDoneButton = () => {
+        if(this.state.AllDone === true){
+            this.setState({AllDone:false}, () => {
+                if(this.state.DoneFlag === 3){
+                    this.webview.injectJavaScript("document.getElementById('Done at QA&PROD').click();")
+                }
+                else if(this.state.DoneFlag === 2){
+                    this.webview.injectJavaScript("document.getElementById('Done at PROD').click();")
+                }
+                else if(this.state.DoneFlag === 1){
+                    this.webview.injectJavaScript("document.getElementById('Done at QA').click();")
+                }
+            })
+        }
+        else{
+            ;
+        }
+    }
+    RenderDoneButtonText = () => {
+        if(this.state.DoneFlag === 3){
+            return(
+                <Text>Done at QA&PROD</Text>
+            )
+        }
+        else if(this.state.DoneFlag === 2){
+            return(
+                <Text>Done at PROD</Text>
+            )
+        }
+        else if(this.state.DoneFlag === 1){
+            return(
+                <Text>Done at QA</Text>
+            )
+        }
     }
 
     HandleBackButton = () => {
@@ -744,6 +790,22 @@ class TransportRoleClass extends React.Component{
                                         </TouchableHighlight>
                                     </View>
                                 </View>
+                                
+                                {
+                                    this.state.AllDone ?
+                                    <TouchableHighlight 
+                                        style={{backgroundColor:'transparent', height:width/10, borderRadius:100, borderWidth:2, borderColor:'grey', justifyContent:'center', alignItems:'center', marginLeft:10, marginRight:10, width:width-20, marginTop:10}}
+                                        onPress={() => {this.HandleDoneButton()}}
+                                    >
+                                        <View>
+                                            {this.RenderDoneButtonText()}
+                                        </View>
+                                    </TouchableHighlight>
+                                    :
+                                    null
+                                }
+                                
+                                
                                 
                             </View>
                         </ScrollView>

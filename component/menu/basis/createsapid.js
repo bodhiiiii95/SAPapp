@@ -303,6 +303,8 @@ class CreateSAPID extends React.Component{
                         firstName:this.state.FirstName,
                         lastName:this.state.LastName,
                         NIK:this.state.NIK,
+                        validFrom:this.DateParseFrom(),
+                        validTo:this.DateParseTo(),
                     }),
                 })
                 .then((response) => response.json())
@@ -989,6 +991,7 @@ class CreateSAPID extends React.Component{
                             <Label>User Group</Label>
                             <Input onChangeText={(value) => this.setState({UserGroup:value})} />
                         </Item>
+                        
                         <Item>
                             <Left>
                                 <DatePicker
@@ -1024,6 +1027,21 @@ class CreateSAPID extends React.Component{
                         <Item floatingLabel>
                             <Label>NIK</Label>
                             <Input onChangeText={(value) => this.setState({NIK:value})} />
+                        </Item>
+
+                        <Item>
+                            <Left>
+                                <DatePicker
+                                    placeHolderText='Valid From'
+                                    onDateChange={(date) => this.ValidUser('vf',date)} 
+                                />
+                            </Left>
+                            <Body>
+                                <DatePicker
+                                    placeHolderText='Valid To'
+                                    onDateChange={(date) => this.ValidUser('vt',date)} 
+                                />
+                            </Body>
                         </Item>
                     </Item>
                 )
